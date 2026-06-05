@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
-    <fullName>Form__c</fullName>
+    <fullName>Format__c</fullName>
     <description>Online/Stationary</description>
-    <label>Form</label>
+    <label>Format</label>
     <required>false</required>
     <trackTrending>false</trackTrending>
     <type>Picklist</type>
@@ -19,6 +19,11 @@
                 <fullName>Online</fullName>
                 <default>false</default>
                 <label>Online</label>
+            </value>
+            <value>
+                <fullName>Hybrid</fullName>
+                <default>false</default>
+                <label>Hybrid</label>
             </value>
         </valueSetDefinition>
     </valueSet>

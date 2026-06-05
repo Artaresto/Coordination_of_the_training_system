@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Enrolled_Count__c</fullName>
+    <label>Enrolled Count</label>
+    <summaryFilterItems>
+        <field>Enrollment__c.Status__c</field>
+        <operation>equals</operation>
+        <value>Enrolled</value>
+    </summaryFilterItems>
+    <summaryForeignKey>Enrollment__c.Training__c</summaryForeignKey>
+    <summaryOperation>count</summaryOperation>
+    <trackTrending>false</trackTrending>
+    <type>Summary</type>
+</CustomField>
