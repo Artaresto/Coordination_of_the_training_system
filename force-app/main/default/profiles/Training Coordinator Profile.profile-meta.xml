@@ -2,13 +2,18 @@
 <Profile xmlns="http://soap.sforce.com/2006/04/metadata">
     <custom>true</custom>
     <fieldPermissions>
-        <editable>true</editable>
-        <field>Certificate__c.Enrollment__c</field>
+        <editable>false</editable>
+        <field>Certificate__c.Certificate_Number__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
         <field>Certificate__c.Issue_Date__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Certificate__c.PDF_URL__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
@@ -19,6 +24,11 @@
     <fieldPermissions>
         <editable>true</editable>
         <field>Enrollment__c.Enrollment_Date__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Enrollment__c.Notes__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
@@ -38,12 +48,12 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>Enrollment__c.Training__c</field>
+        <field>Trainer__c.Avaiable__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>Trainer__c.Avaiable__c</field>
+        <field>Trainer__c.Bio__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
@@ -53,12 +63,17 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
+        <field>Trainer__c.Phone__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
         <field>Trainer__c.Specialization__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>Training_Session__c.Duration__c</field>
+        <field>Training_Session__c.Duration_Minutes__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
@@ -73,37 +88,47 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>Training_Session__c.Training__c</field>
+        <field>Training_Session__c.Topic__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>Training__c.Data_End__c</field>
+        <field>Training__c.Description__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>Training__c.Data_Start__c</field>
+        <field>Training__c.End_Date__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>false</editable>
+        <field>Training__c.Enrolled_Count__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>Training__c.Form__c</field>
+        <field>Training__c.Format__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>Training__c.Localization__c</field>
+        <field>Training__c.Location__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
-        <field>Training__c.Max_Participans_number__c</field>
+        <field>Training__c.Max_Participants__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
         <field>Training__c.Price__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>Training__c.Start_Date__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>

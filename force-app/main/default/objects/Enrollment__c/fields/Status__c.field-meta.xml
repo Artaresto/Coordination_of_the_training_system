@@ -15,14 +15,19 @@
                 <label>Enrolled</label>
             </value>
             <value>
-                <fullName>Finished</fullName>
+                <fullName>Completed</fullName>
                 <default>false</default>
-                <label>Finished</label>
+                <label>Completed</label>
             </value>
             <value>
                 <fullName>Cancelled</fullName>
                 <default>false</default>
                 <label>Cancelled</label>
+            </value>
+            <value>
+                <fullName>Waitlisted</fullName>
+                <default>false</default>
+                <label>Waitlisted</label>
             </value>
         </valueSetDefinition>
     </valueSet>
