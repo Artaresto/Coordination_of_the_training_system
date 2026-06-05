@@ -1,0 +1,93 @@
+<template>
+    <div class="tms-catalog">
+
+        <!-- Header -->
+        <div class="tms-header">
+            <div class="tms-header-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                </svg>
+            </div>
+            <div>
+                <h1 class="tms-title">Training Catalog</h1>
+                <p class="tms-subtitle">{trainingCount} available trainings</p>
+            </div>
+        </div>
+
+        <!-- Filtry -->
+        <div class="tms-filters">
+            <div class="tms-search-wrap">
+                <svg class="tms-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input
+                    type="text"
+                    class="tms-search"
+                    placeholder="Search trainings..."
+                    onchange={handleSearch}
+                />
+            </div>
+            <select class="tms-select" onchange={handleFormatChange}>
+                <option value="">All formats</option>
+                <option value="Stationary">Stationary</option>
+                <option value="Online">Online</option>
+                <option value="Hybrid">Hybrid</option>
+            </select>
+        </div>
+
+        <!-- Lista szkoleń -->
+        <div class="tms-grid">
+            <template if:true={trainings.length}>
+                <template for:each={trainings} for:item="t">
+                    <div key={t.Id} class="tms-card">
+                        <div class="tms-card-top">
+                            <span class="tms-badge">{t.Format__c}</span>
+                            <span class="tms-spots" if:true={t.Free_Spots__c}>
+                                {t.Free_Spots__c} spots left
+                            </span>
+                            <span class="tms-spots tms-spots--full" if:false={t.Free_Spots__c}>
+                                Waitlist
+                            </span>
+                        </div>
+                        <h2 class="tms-card-title">{t.Name}</h2>
+                        <div class="tms-card-meta">
+                            <div class="tms-meta-row">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                <lightning-formatted-date-time
+                                    value={t.Start_Date__c}
+                                    year="numeric" month="short" day="numeric"
+                                    hour="2-digit" minute="2-digit">
+                                </lightning-formatted-date-time>
+                            </div>
+                            <div class="tms-meta-row">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                <span>{t.Location__c}</span>
+                            </div>
+                        </div>
+                        <div class="tms-card-footer">
+                            <span class="tms-price">{t.Price__c} PLN</span>
+                            <button class="tms-btn" data-id={t.Id} onclick={handleEnroll}>
+                                Enroll
+                            </button>
+                        </div>
+                    </div>
+                </template>
+            </template>
+            <template if:false={trainings.length}>
+                <div class="tms-empty">
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <p>No trainings found.</p>
+                </div>
+            </template>
+        </div>
+
+        <template if:true={showEnrollForm}>
+            <c-enrollment-form
+                training-id={selectedTrainingId}
+                training-name={selectedTrainingName}
+                onclose={handleCloseModal}>
+            </c-enrollment-form>
+        </template>
+    </div>
+</template>

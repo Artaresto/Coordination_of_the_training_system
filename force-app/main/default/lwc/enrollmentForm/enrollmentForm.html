@@ -1,0 +1,53 @@
+<template>
+    <div class="ef-overlay" onclick={handleOverlayClick}>
+        <div class="ef-modal">
+            <div class="ef-modal-header">
+                <h2 class="ef-title">Enroll in training</h2>
+                <button class="ef-close" onclick={handleClose}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="ef-modal-body">
+                <p class="ef-training-name">{trainingName}</p>
+
+                <template if:true={isSuccess}>
+                    <div class="ef-alert ef-alert--success">
+                        ✓ You have been successfully enrolled!
+                    </div>
+                </template>
+
+                <template if:true={isWaitlisted}>
+                    <div class="ef-alert ef-alert--warning">
+                        No spots available — you have been added to the waitlist.
+                    </div>
+                </template>
+
+                <template if:true={errorMessage}>
+                    <div class="ef-alert ef-alert--error">
+                        {errorMessage}
+                    </div>
+                </template>
+
+                <template if:false={isDone}>
+                    <p class="ef-confirm-text">Do you want to confirm your enrollment?</p>
+                    <div class="ef-actions">
+                        <button class="ef-btn ef-btn--secondary" onclick={handleClose}>Cancel</button>
+                        <button class="ef-btn ef-btn--primary" onclick={handleConfirm} disabled={isLoading}>
+                            <template if:true={isLoading}>Enrolling...</template>
+                            <template if:false={isLoading}>Confirm</template>
+                        </button>
+                    </div>
+                </template>
+
+                <template if:true={isDone}>
+                    <div class="ef-actions">
+                        <button class="ef-btn ef-btn--primary" onclick={handleClose}>Close</button>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+</template>
