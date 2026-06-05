@@ -1,0 +1,123 @@
+.ef-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9000;
+}
+
+.ef-modal {
+    background: #fff;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 420px;
+    margin: 1rem;
+    overflow: hidden;
+}
+
+.ef-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e5e7eb;
+    background: #043669;
+}
+
+.ef-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    margin: 0;
+}
+
+.ef-close {
+    background: none;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    opacity: 0.8;
+}
+
+.ef-close:hover { opacity: 1; }
+
+.ef-modal-body {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.ef-training-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #043669;
+    margin: 0;
+}
+
+.ef-confirm-text {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0;
+}
+
+.ef-alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.ef-alert--success {
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #6ee7b7;
+}
+
+.ef-alert--warning {
+    background: #fffbeb;
+    color: #92400e;
+    border: 1px solid #fcd34d;
+}
+
+.ef-alert--error {
+    background: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+}
+
+.ef-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.ef-btn {
+    padding: 9px 22px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: background 0.2s;
+}
+
+.ef-btn--primary {
+    background: #043669;
+    color: #fff;
+}
+
+.ef-btn--primary:hover { background: #032d57; }
+.ef-btn--primary:disabled { background: #9ca3af; cursor: not-allowed; }
+
+.ef-btn--secondary {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.ef-btn--secondary:hover { background: #e5e7eb; }
