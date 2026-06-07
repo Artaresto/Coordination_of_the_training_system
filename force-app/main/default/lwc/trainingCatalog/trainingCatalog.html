@@ -1,7 +1,6 @@
 <template>
     <div class="tms-catalog">
 
-        <!-- Header -->
         <div class="tms-header">
             <div class="tms-header-icon">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -15,7 +14,6 @@
             </div>
         </div>
 
-        <!-- Filtry -->
         <div class="tms-filters">
             <div class="tms-search-wrap">
                 <svg class="tms-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -36,7 +34,6 @@
             </select>
         </div>
 
-        <!-- Lista szkoleń -->
         <div class="tms-grid">
             <template if:true={trainings.length}>
                 <template for:each={trainings} for:item="t">
