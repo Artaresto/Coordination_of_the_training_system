@@ -1,7 +1,5 @@
 public class EnrollmentHandler {
 
-    // ── BEFORE INSERT ──────────────────────────────────────────────────────────
-    // Ustawia status: Enrolled lub Waitlisted, wypełnia datę zapisu, blokuje duplikaty
     public static void beforeInsert(List<Enrollment__c> newList) {
 
         Set<Id> trainingIds = new Set<Id>();
@@ -12,7 +10,6 @@ public class EnrollmentHandler {
             FROM Training__c WHERE Id IN :trainingIds
         ]);
 
-        // Zbieramy pary uczestnik+szkolenie żeby sprawdzić duplikaty jednym zapytaniem
         Set<String> existingKeys = new Set<String>();
         for (Enrollment__c e : [
             SELECT Participant__c, Training__c FROM Enrollment__c
@@ -39,8 +36,6 @@ public class EnrollmentHandler {
         }
     }
 
-    // ── BEFORE UPDATE ──────────────────────────────────────────────────────────
-    // Uczestnik może anulować tylko do 3 dni przed szkoleniem
     public static void beforeUpdate(List<Enrollment__c> newList, Map<Id, Enrollment__c> oldMap) {
 
         Set<Id> trainingIds = new Set<Id>();
@@ -70,9 +65,6 @@ public class EnrollmentHandler {
         }
     }
 
-    // ── AFTER UPDATE ───────────────────────────────────────────────────────────
-    // Po anulowaniu: awansuje pierwszą osobę z listy oczekujących
-    // Po ukończeniu: tworzy certyfikat
     public static void afterUpdate(List<Enrollment__c> newList, Map<Id, Enrollment__c> oldMap) {
 
         Set<Id> cancelledTrainings = new Set<Id>();
@@ -88,14 +80,12 @@ public class EnrollmentHandler {
         if (!completed.isEmpty())          generateCertificates(completed);
     }
 
-    // ── LISTA OCZEKUJĄCYCH ─────────────────────────────────────────────────────
     private static void promoteFromWaitlist(Set<Id> trainingIds) {
 
         Map<Id, Training__c> trainings = new Map<Id, Training__c>([
             SELECT Id, Max_Participants__c, Enrolled_Count__c FROM Training__c WHERE Id IN :trainingIds
         ]);
 
-        // Pierwsza osoba z kolejki per szkolenie (najwcześniejsza data zapisu)
         Map<Id, Enrollment__c> firstInQueue = new Map<Id, Enrollment__c>();
         for (Enrollment__c e : [
             SELECT Id, Training__c FROM Enrollment__c
@@ -120,13 +110,11 @@ public class EnrollmentHandler {
         if (!toPromote.isEmpty()) update toPromote;
     }
 
-    // ── CERTYFIKATY ────────────────────────────────────────────────────────────
     private static void generateCertificates(List<Enrollment__c> completed) {
 
         Set<Id> enrollmentIds = new Set<Id>();
         for (Enrollment__c e : completed) enrollmentIds.add(e.Id);
 
-        // Nie tworzymy duplikatów
         Set<Id> alreadyHasCert = new Set<Id>();
         for (Certificate__c c : [SELECT Enrollment__c FROM Certificate__c WHERE Enrollment__c IN :enrollmentIds]) {
             alreadyHasCert.add(c.Enrollment__c);
