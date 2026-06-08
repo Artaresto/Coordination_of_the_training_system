@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>RoomCapacityValidation</fullName>
+    <active>true</active>
+    <errorConditionFormula>AND(
+NOT(ISBLANK(Room__c)),
+Max_Participants__c &gt; Room__r.Max_Capacity__c
+)</errorConditionFormula>
+    <errorDisplayField>Max_Participants__c</errorDisplayField>
+    <errorMessage>Training exceeds room capacity</errorMessage>
+</ValidationRule>
