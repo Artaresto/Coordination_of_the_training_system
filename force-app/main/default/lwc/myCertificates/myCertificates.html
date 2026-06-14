@@ -1,0 +1,40 @@
+<template>
+    <div class="cert-wrap">
+        <div class="cert-header">
+            <h1 class="cert-title">My Certificates</h1>
+        </div>
+
+        <template if:true={isLoading}>
+            <p class="cert-info">Loading…</p>
+        </template>
+
+        <template if:true={errorMessage}>
+            <div class="cert-alert">{errorMessage}</div>
+        </template>
+
+        <template if:true={hasNoCertificates}>
+            <p class="cert-empty">You don't have any certificates yet. They appear here after you complete a training.</p>
+        </template>
+
+        <div class="cert-list">
+            <template for:each={certificates} for:item="c">
+                <div key={c.id} class="cert-card">
+                    <div class="cert-card-icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.5 12.9 17 22l-5-3-5 3 1.5-9.1"/></svg>
+                    </div>
+                    <div class="cert-card-main">
+                        <span class="cert-card-name">{c.trainingName}</span>
+                        <span class="cert-card-meta">
+                            <lightning-formatted-date-time value={c.issueDate}
+                                year="numeric" month="short" day="numeric"></lightning-formatted-date-time>
+                            &nbsp;·&nbsp;{c.number}
+                        </span>
+                    </div>
+                    <button class="cert-btn" data-id={c.id} onclick={handleDownload}>
+                        Download PDF
+                    </button>
+                </div>
+            </template>
+        </div>
+    </div>
+</template>

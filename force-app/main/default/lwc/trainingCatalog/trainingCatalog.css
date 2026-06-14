@@ -211,3 +211,210 @@
     margin-bottom: 12px;
     opacity: 0.4;
 }
+
+.tms-card--enrolled {
+    border-color: #059669;
+    background: #f0fdf4;
+}
+
+.tms-card-title--clickable {
+    cursor: pointer;
+}
+
+.tms-card-title--clickable:hover {
+    color: #043669;
+}
+
+.tms-enrolled-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #059669;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.tms-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9000;
+    padding: 1rem;
+    box-sizing: border-box;
+}
+
+.tms-modal {
+    background: #fff;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 520px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.tms-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px;
+    background: #043669;
+    flex-shrink: 0;
+}
+
+.tms-modal-title {
+    font-size: 17px;
+    font-weight: 600;
+    color: #fff;
+    margin: 0;
+}
+
+.tms-modal-close {
+    background: none;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    opacity: 0.8;
+}
+
+.tms-modal-close:hover { opacity: 1; }
+
+.tms-modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.tms-modal-row {
+    display: flex;
+    gap: 12px;
+    font-size: 14px;
+    color: #374151;
+}
+
+.tms-modal-label {
+    font-weight: 600;
+    color: #6b7280;
+    min-width: 70px;
+}
+
+.tms-modal-section-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #043669;
+}
+
+.tms-modal-trainer {
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.tms-modal-trainer-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.tms-modal-trainer-spec {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0;
+}
+
+.tms-modal-trainer-bio {
+    font-size: 13px;
+    color: #4b5563;
+    line-height: 1.5;
+    margin: 0;
+    white-space: pre-line;
+}
+
+.tms-modal-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.tms-modal-description {
+    font-size: 14px;
+    color: #4b5563;
+    line-height: 1.6;
+    margin: 0;
+    white-space: pre-line;
+}
+
+.tms-card--waitlisted {
+    border-color: #d97706;
+    background: #fffbeb;
+}
+
+.tms-enrolled-label--waitlisted {
+    color: #d97706;
+}
+
+.tms-card--completed {
+    border-color: #64748b;
+    background: #f8fafc;
+}
+
+.tms-enrolled-label--completed {
+    color: #64748b;
+}
+
+.tms-card--cancelled {
+    border-color: #dc2626;
+    background: #fef2f2;
+}
+
+.tms-enrolled-label--cancelled {
+    color: #dc2626;
+}
+
+.tms-btn--unenroll {
+    background: #fff;
+    color: #dc2626;
+    border: 1.5px solid #dc2626;
+}
+
+.tms-btn--unenroll:hover { background: #fef2f2; }
+.tms-btn--unenroll:disabled { color: #9ca3af; border-color: #d1d5db; cursor: not-allowed; }
+
+.tms-btn--secondary {
+    background: #f3f4f6;
+    color: #374151;
+}
+.tms-btn--secondary:hover { background: #e5e7eb; }
+
+.tms-modal-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 8px;
+    padding-top: 14px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.tms-modal-alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    background: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+}
