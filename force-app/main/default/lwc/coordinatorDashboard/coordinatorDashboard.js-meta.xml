@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>60.0</apiVersion>
+    <isExposed>true</isExposed>
+    <masterLabel>TMS Coordinator Dashboard</masterLabel>
+    <description>Główny panel operacyjny dla koordynatora szkoleń TMS.</description>
+    <targets>
+        <target>lightning__AppPage</target>
+        <target>lightningCommunity__Page</target>
+        <target>lightningCommunity__Default</target>
+    </targets>
+</LightningComponentBundle>
