@@ -1,0 +1,38 @@
+.cert-wrap {
+    font-family: 'Segoe UI', sans-serif;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 1.5rem 1rem 2rem;
+}
+.cert-header {
+    padding-bottom: 1rem;
+    margin-bottom: 1.25rem;
+    border-bottom: 2px solid #043669;
+}
+.cert-title { font-size: 22px; font-weight: 700; color: #043669; margin: 0; }
+.cert-info, .cert-empty { color: #9ca3af; font-size: 14px; text-align: center; margin-top: 1.5rem; }
+.cert-alert {
+    padding: 12px 16px; border-radius: 8px; font-size: 14px;
+    background: #fef2f2; color: #991b1b; border: 1px solid #fca5a5; margin-bottom: 1rem;
+}
+.cert-list { display: flex; flex-direction: column; gap: 12px; }
+.cert-card {
+    display: flex; align-items: center; gap: 14px;
+    background: #fff; border: 1.5px solid #e5e7eb; border-radius: 12px; padding: 16px 18px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.cert-card:hover { border-color: #043669; box-shadow: 0 4px 16px rgba(4, 54, 105, 0.1); }
+.cert-card-icon {
+    width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
+    background: #e8f0f9; color: #043669;
+    display: flex; align-items: center; justify-content: center;
+}
+.cert-card-main { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+.cert-card-name { font-size: 15px; font-weight: 600; color: #111827; }
+.cert-card-meta { font-size: 12px; color: #6b7280; }
+.cert-btn {
+    background: #043669; color: #fff; border: none; border-radius: 8px;
+    padding: 8px 18px; font-size: 13px; font-weight: 600; cursor: pointer;
+    flex-shrink: 0; transition: background 0.2s;
+}
+.cert-btn:hover { background: #032d57; }

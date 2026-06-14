@@ -37,7 +37,7 @@
         <div class="tms-grid">
             <template if:true={trainings.length}>
                 <template for:each={trainings} for:item="t">
-                    <div key={t.Id} class="tms-card">
+                    <div key={t.Id} class={t.cardClass}>
                         <div class="tms-card-top">
                             <span class="tms-badge">{t.Format__c}</span>
                             <span class="tms-spots" if:true={t.Free_Spots__c}>
@@ -47,7 +47,12 @@
                                 Waitlist
                             </span>
                         </div>
-                        <h2 class="tms-card-title">{t.Name}</h2>
+
+                        <h2 class="tms-card-title tms-card-title--clickable"
+                            data-id={t.Id} onclick={handleOpenDetails}>
+                            {t.Name}
+                        </h2>
+
                         <div class="tms-card-meta">
                             <div class="tms-meta-row">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -57,16 +62,26 @@
                                     hour="2-digit" minute="2-digit">
                                 </lightning-formatted-date-time>
                             </div>
-                            <div class="tms-meta-row">
+                            <div class="tms-meta-row" if:true={t.Location__c}>
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                                 <span>{t.Location__c}</span>
                             </div>
+                            <div class="tms-meta-row" if:true={t.trainerName}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                <span>{t.trainerName}</span>
+                            </div>
                         </div>
+
                         <div class="tms-card-footer">
                             <span class="tms-price">{t.Price__c} PLN</span>
-                            <button class="tms-btn" data-id={t.Id} onclick={handleEnroll}>
-                                Enroll
-                            </button>
+                            <template if:true={t.isInvolved}>
+                                <span class={t.statusLabelClass}>{t.statusLabel}</span>
+                            </template>
+                            <template if:false={t.isInvolved}>
+                                <button class="tms-btn" data-id={t.Id} onclick={handleEnroll}>
+                                    Enroll
+                                </button>
+                            </template>
                         </div>
                     </div>
                 </template>
@@ -78,6 +93,84 @@
                 </div>
             </template>
         </div>
+
+        <template if:true={showDetails}>
+            <div class="tms-overlay" onclick={handleDetailsOverlayClick}>
+                <div class="tms-modal">
+                    <div class="tms-modal-header">
+                        <h2 class="tms-modal-title">{detailsTraining.name}</h2>
+                        <button class="tms-modal-close" onclick={handleCloseDetails}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="tms-modal-body">
+                        <span class="tms-badge">{detailsTraining.format}</span>
+
+                        <div class="tms-modal-row">
+                            <span class="tms-modal-label">Start</span>
+                            <lightning-formatted-date-time
+                                value={detailsTraining.startDate}
+                                year="numeric" month="short" day="numeric"
+                                hour="2-digit" minute="2-digit">
+                            </lightning-formatted-date-time>
+                        </div>
+                        <div class="tms-modal-row">
+                            <span class="tms-modal-label">End</span>
+                            <lightning-formatted-date-time
+                                value={detailsTraining.endDate}
+                                year="numeric" month="short" day="numeric"
+                                hour="2-digit" minute="2-digit">
+                            </lightning-formatted-date-time>
+                        </div>
+                        <template if:true={detailsTraining.location}>
+                            <div class="tms-modal-row">
+                                <span class="tms-modal-label">Location</span>
+                                <span>{detailsTraining.location}</span>
+                            </div>
+                        </template>
+
+                        <template if:true={detailsTraining.description}>
+                            <div class="tms-modal-section">
+                                <span class="tms-modal-section-title">Description</span>
+                                <p class="tms-modal-description">{detailsTraining.description}</p>
+                            </div>
+                        </template>
+
+                        <template if:true={detailsTraining.trainerName}>
+                            <div class="tms-modal-trainer">
+                                <span class="tms-modal-section-title">Trainer</span>
+                                <span class="tms-modal-trainer-name">{detailsTraining.trainerName}</span>
+                                <template if:true={detailsTraining.trainerSpecialization}>
+                                    <p class="tms-modal-trainer-spec">{detailsTraining.trainerSpecialization}</p>
+                                </template>
+                                <template if:true={detailsTraining.trainerBio}>
+                                    <p class="tms-modal-trainer-bio">{detailsTraining.trainerBio}</p>
+                                </template>
+                            </div>
+                        </template>
+
+                        <template if:true={unenrollError}>
+                            <div class="tms-modal-alert">{unenrollError}</div>
+                        </template>
+
+                        <div class="tms-modal-actions">
+                            <button class="tms-btn tms-btn--secondary" onclick={handleCloseDetails}>Close</button>
+                            <template if:true={detailsTraining.showUnenroll}>
+                                <button class="tms-btn tms-btn--unenroll" onclick={handleUnenroll} disabled={isUnenrolling}>
+                                    <template if:true={isUnenrolling}>...</template>
+                                    <template if:false={isUnenrolling}>
+                                        <template if:true={confirmUnenroll}>Confirm?</template>
+                                        <template if:false={confirmUnenroll}>Unenroll</template>
+                                    </template>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
 
         <template if:true={showEnrollForm}>
             <c-enrollment-form

@@ -1,0 +1,162 @@
+<template>
+    <div class="cal-wrap">
+
+        <div class="cal-header">
+            <h1 class="cal-title">My Trainings</h1>
+            <div class="cal-nav">
+                <button class="cal-nav-btn" onclick={handlePrev} title="Previous month">‹</button>
+                <span class="cal-month">{monthLabel}</span>
+                <button class="cal-nav-btn" onclick={handleNext} title="Next month">›</button>
+                <button class="cal-today-btn" onclick={handleToday}>Today</button>
+            </div>
+        </div>
+
+        <div class="cal-grid">
+            <template for:each={weekdays} for:item="wd">
+                <div key={wd} class="cal-weekday">{wd}</div>
+            </template>
+
+            <template for:each={weeks} for:item="week">
+                <template for:each={week.days} for:item="day">
+                    <template if:true={day.empty}>
+                        <div key={day.key} class="cal-cell cal-cell--empty"></div>
+                    </template>
+                    <template if:false={day.empty}>
+                        <div key={day.key} class={day.cellClass}>
+                            <span class="cal-daynum">{day.day}</span>
+                            <div class="cal-chips">
+                                <template for:each={day.trainings} for:item="t">
+                                    <button key={t.enrollmentId} class={t.chipClass}
+                                            data-eid={t.enrollmentId} onclick={handleSelect}
+                                            title={t.name}>
+                                        {t.name}
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </template>
+            </template>
+        </div>
+
+        <template if:true={hasNoTrainings}>
+            <p class="cal-empty">You are not enrolled in any trainings yet.</p>
+        </template>
+
+        <template if:true={showDetails}>
+            <div class="cal-overlay" onclick={handleOverlayClick}>
+                <div class="cal-modal">
+                    <div class="cal-modal-header">
+                        <h2 class="cal-modal-title">{selected.name}</h2>
+                        <button class="cal-modal-close" onclick={handleCloseDetails}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="cal-modal-body">
+                        <span class="cal-badge">{selected.format}</span>
+
+                        <div class="cal-modal-row">
+                            <span class="cal-modal-label">Start</span>
+                            <lightning-formatted-date-time value={selected.startDate}
+                                year="numeric" month="short" day="numeric"
+                                hour="2-digit" minute="2-digit"></lightning-formatted-date-time>
+                        </div>
+                        <div class="cal-modal-row">
+                            <span class="cal-modal-label">End</span>
+                            <lightning-formatted-date-time value={selected.endDate}
+                                year="numeric" month="short" day="numeric"
+                                hour="2-digit" minute="2-digit"></lightning-formatted-date-time>
+                        </div>
+                        <template if:true={selected.location}>
+                            <div class="cal-modal-row">
+                                <span class="cal-modal-label">Location</span>
+                                <span>{selected.location}</span>
+                            </div>
+                        </template>
+                        <div class="cal-modal-row">
+                            <span class="cal-modal-label">Status</span>
+                            <span>{selected.status}</span>
+                        </div>
+
+                        <template if:true={cancelError}>
+                            <div class="cal-alert">{cancelError}</div>
+                        </template>
+                        <template if:true={selected.description}>
+                            <div class="cal-modal-section">
+                                <span class="cal-modal-section-title">Description</span>
+                                <p class="cal-modal-description">{selected.description}</p>
+                            </div>
+                        </template>
+                        <template if:true={selected.trainerName}>
+                            <div class="cal-modal-trainer">
+                                <span class="cal-modal-section-title">Trainer</span>
+                                <span class="cal-modal-trainer-name">{selected.trainerName}</span>
+                                <template if:true={selected.trainerSpecialization}>
+                                    <p class="cal-modal-trainer-spec">{selected.trainerSpecialization}</p>
+                                </template>
+                                <template if:true={selected.trainerBio}>
+                                    <p class="cal-modal-trainer-bio">{selected.trainerBio}</p>
+                                </template>
+                            </div>
+                        </template>
+                        <template if:true={selected.isCompleted}>
+                            <div class="cal-review">
+                                <span class="cal-modal-section-title">Your review</span>
+
+                                <div class="cal-review-row">
+                                    <span class="cal-review-label">Training</span>
+                                    <div class="cal-stars">
+                                        <template for:each={trainingStars} for:item="s">
+                                            <button key={s.key} class={s.class}
+                                                    data-rating="training" data-value={s.value}
+                                                    onclick={handleStarClick}>★</button>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <div class="cal-review-row">
+                                    <span class="cal-review-label">Trainer</span>
+                                    <div class="cal-stars">
+                                        <template for:each={trainerStars} for:item="s">
+                                            <button key={s.key} class={s.class}
+                                                    data-rating="trainer" data-value={s.value}
+                                                    onclick={handleStarClick}>★</button>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <textarea class="cal-review-textarea"
+                                          placeholder="Your comments (optional)"
+                                          onchange={handleReviewComment}>{reviewComment}</textarea>
+
+                                <template if:true={reviewError}>
+                                    <div class="cal-alert">{reviewError}</div>
+                                </template>
+                                <template if:true={reviewSaved}>
+                                    <div class="cal-review-saved">✓ Thank you! Your review has been saved.</div>
+                                </template>
+
+                                <button class="cal-btn cal-btn--primary"
+                                        onclick={handleSubmitReview} disabled={isSubmittingReview}>
+                                    <template if:true={isSubmittingReview}>Saving...</template>
+                                    <template if:false={isSubmittingReview}>Save review</template>
+                                </button>
+                            </div>
+                        </template>
+                        <div class="cal-modal-actions">
+                            <button class="cal-btn cal-btn--secondary" onclick={handleCloseDetails}>Close</button>
+                            <template if:true={selected.canCancel}>
+                                <button class="cal-btn cal-btn--danger" onclick={handleCancel} disabled={isCancelling}>
+                                    <template if:true={isCancelling}>Cancelling...</template>
+                                    <template if:false={isCancelling}>Unenroll</template>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
+</template>
