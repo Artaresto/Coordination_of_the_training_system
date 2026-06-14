@@ -1,0 +1,242 @@
+<template>
+    <div class="tms-dashboard">
+        
+        <div class="tms-header">
+            <div class="tms-header-left">
+                <div class="tms-header-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><rect x="7" y="7" width="3" height="9"></rect><rect x="14" y="7" width="3" height="5"></rect>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="tms-title">Panel Koordynatora</h1>
+                    <p class="tms-subtitle">Moje szkolenia, zapisy i certyfikaty</p>
+                </div>
+            </div>
+            <div>
+                <button class="tms-btn" onclick={openTrainingModal}>+ Nowe szkolenie</button>
+            </div>
+        </div>
+
+        <div class="tms-grid-main">
+            <div>
+                <div class="tms-card" style="padding: 0; overflow: hidden;">
+                    <lightning-tabset variant="scoped">
+                        
+                        <lightning-tab label="Aktywne">
+                            <div class="slds-p-around_medium slds-grid slds-wrap slds-gutters">
+                                <template if:true={activeTrainings.length}>
+                                    <template for:each={activeTrainings} for:item="training">
+                                        <div key={training.Id} class="slds-col slds-size_1-of-2 slds-p-bottom_medium">
+                                            <div class="training-box">
+                                                <div class="training-box-header">
+                                                    <strong>{training.Name}</strong>
+                                                    <span class="tms-badge">{training.Format__c}</span>
+                                                </div>
+                                                <div class="training-box-stats">
+                                                    <span>Miejsca: {training.Enrolled_Count__c} / {training.Max_Participants__c}</span>
+                                                </div>
+                                                <lightning-progress-bar value={training.occupancyPercentage} size="medium" variant={training.barVariant}></lightning-progress-bar>
+                                                <div style="display: flex; gap: 8px; margin-top: 12px;">
+                                                    <button class="tms-btn-small" style="background-color: #043669; color: white; border: 1px solid #043669;" data-id={training.Id} onclick={openParticipantsModal}>Zarządzaj Uczestnikami</button>
+                                                    <button class="tms-btn-small" style="background-color: white; color: #043669; border: 1px solid #043669;" data-id={training.Id} onclick={handleEditTraining}>Edytuj</button>
+                                                    <button class="tms-btn-small" style="background-color: white; color: #dc2626; border: 1px solid #dc2626;" data-id={training.Id} onclick={handleDeleteTraining}>Usuń</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </template>
+                                <template if:false={activeTrainings.length}><p class="empty-msg">Brak aktywnych szkoleń.</p></template>
+                            </div>
+                        </lightning-tab>
+
+                        <lightning-tab label="Planowane">
+                            <div class="slds-p-around_medium slds-grid slds-wrap slds-gutters">
+                                <template if:true={plannedTrainings.length}>
+                                    <template for:each={plannedTrainings} for:item="training">
+                                        <div key={training.Id} class="slds-col slds-size_1-of-2 slds-p-bottom_medium">
+                                            <div class="training-box">
+                                                <div class="training-box-header">
+                                                    <strong>{training.Name}</strong>
+                                                    <span class="tms-badge" style="background:#fef3c7; color:#92400e;">{training.Format__c}</span>
+                                                </div>
+                                                <p style="font-size: 13px; color: #6b7280; margin-top:8px;">
+                                                    Start: <lightning-formatted-date-time value={training.Start_Date__c} year="numeric" month="short" day="2-digit"></lightning-formatted-date-time>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </template>
+                                <template if:false={plannedTrainings.length}><p class="empty-msg">Brak planowanych szkoleń.</p></template>
+                            </div>
+                        </lightning-tab>
+
+                        <lightning-tab label="Zakończone">
+                            <div class="slds-p-around_medium slds-grid slds-wrap slds-gutters">
+                                <template if:true={completedTrainings.length}>
+                                    <template for:each={completedTrainings} for:item="training">
+                                        <div key={training.Id} class="slds-col slds-size_1-of-2 slds-p-bottom_medium">
+                                            <div class="training-box" style="border-left: 4px solid #6b7280;">
+                                                <div class="training-box-header">
+                                                    <strong>{training.Name}</strong>
+                                                </div>
+                                                <p style="font-size: 13px; color: #6b7280; margin-top:8px; margin-bottom: 12px;">Zakończone: <lightning-formatted-date-time value={training.End_Date__c} year="numeric" month="short" day="2-digit"></lightning-formatted-date-time></p>
+<template if:true={isTrainingCompleted}>
+    <button class="tms-btn-small" data-id={training.Id} onclick={openParticipantsModal}>Wystaw Certyfikaty</button>
+</template>                                            </div>
+                                        </div>
+                                    </template>
+                                </template>
+                                <template if:false={completedTrainings.length}><p class="empty-msg">Brak zakończonych szkoleń.</p></template>
+                            </div>
+                        </lightning-tab>
+
+                        <lightning-tab label="Analiza i Alerty">
+                            <div class="slds-p-around_medium" style="font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+                                <div class="slds-m-bottom_large">
+                                    <template if:true={hasEndingSoon}>
+                                        <div class="slds-grid slds-wrap slds-gutters">
+                                            <template for:each={endingSoonTrainings} for:item="alert">
+                                                <div key={alert.Id} class="slds-col slds-size_1-of-2 slds-p-bottom_small">
+                                                    <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 12px; border-radius: 4px;">
+                                                        <strong style="color: #991b1b; display: block; font-size: 14px;">{alert.Name}</strong>
+                                                        <span style="color: #7f1d1d; font-size: 13px;">Szkolenie zakończy się:<lightning-formatted-date-time value={alert.End_Date__c} month="short" day="2-digit"></lightning-formatted-date-time></span>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                    <template if:false={hasEndingSoon}>
+                                        <p style="color: #059669; background: #ecfdf5; padding: 10px; border-radius: 4px;">Brak szkoleń kończących się w ciągu najbliższych 7 dni.</p>
+                                    </template>
+                                </div>
+
+                                <div class="slds-grid slds-gutters slds-m-top_large">
+                                    <div class="slds-col slds-size_1-of-2">
+                                        <div class="slds-box" style="height: 320px; display: flex; flex-direction: column;">
+                                            <strong style="color: #043669; font-size: 15px; margin-bottom: 20px;">Zapisy per miesiąc (Bieżący rok)</strong>
+                                            <template if:true={monthlyData.length}>
+                                                <div style="flex-grow: 1; display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 2px solid #e5e7eb; padding-top: 20px;">
+                                                    <template for:each={monthlyData} for:item="bar">
+                                                        <div key={bar.month} style="flex: 1; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end;">
+                                                            <span style="font-size: 12px; color: #4b5563; font-weight: bold; margin-bottom: 4px;">{bar.displayValue}</span>
+                                                            <div style={bar.barStyle} title={bar.value}></div>
+                                                        </div>
+                                                    </template>
+                                                </div>
+                                                <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+                                                    <template for:each={monthlyData} for:item="bar">
+                                                        <div key={bar.month} style="flex: 1; text-align: center; font-size: 12px; color: #6b7280;">{bar.month}</div>
+                                                    </template>
+                                                </div>
+                                            </template>
+                                            <template if:false={monthlyData.length}>
+                                                <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 14px;">Brak danych o zapisach w tym roku.</div>
+                                            </template>
+                                        </div>
+                                    </div>
+
+                                    <div class="slds-col slds-size_1-of-2">
+                                        <div class="slds-box" style="height: 320px; display: flex; flex-direction: column;">
+                                            <strong style="color: #043669; font-size: 15px; margin-bottom: 20px;">Format aktualnych szkoleń</strong>
+                                            <template if:true={formatLegend.length}>
+                                                <div style="display: flex; flex-grow: 1; align-items: center; justify-content: center; gap: 40px;">
+                                                    <div style={pieChartStyle}></div>
+                                                    <div>
+                                                        <template for:each={formatLegend} for:item="leg">
+                                                            <div key={leg.label} style="display: flex; align-items: center; margin-bottom: 12px;">
+                                                                <div style={leg.colorStyle}></div>
+                                                                <span style="font-size: 14px; color: #374151;"><strong>{leg.label}</strong> ({leg.value})</span>
+                                                            </div>
+                                                        </template>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                            <template if:false={formatLegend.length}>
+                                                <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 14px;">Brak aktywnych/planowanych szkoleń.</div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </lightning-tab>
+
+                    </lightning-tabset>
+                </div>
+
+                <div class="tms-card">
+                    <div class="tms-card-header">
+                        Zarządzanie zapytaniami i zapisami
+                    </div>
+                    <div class="table-container">
+                        <template if:true={pendingEnrollments.length}>
+                            <lightning-datatable
+                                key-field="Id"
+                                data={pendingEnrollments}
+                                columns={enrollmentColumns}
+                                hide-checkbox-column
+                                onrowaction={handleRowAction}>
+                            </lightning-datatable>
+                        </template>
+                        <template if:false={pendingEnrollments.length}>
+                            <p class="empty-msg" style="padding: 2rem;">Brak oczekujących zgłoszeń.</p>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="tms-stat-box">
+                    <div>Wystawione certyfikaty (W tym miesiącu)</div>
+                    <div class="tms-stat-value">{certificatesCount}</div>
+                </div>
+            </div>
+        </div>
+
+        <template if:true={isParticipantsModalOpen}>
+            <div class="ef-overlay">
+                <div class="ef-modal" style="max-width: 800px;">
+                    <div class="ef-modal-header">
+                        <h2 class="ef-title">Uczestnicy Szkolenia</h2>
+                        <button class="ef-close" onclick={closeParticipantsModal}>X</button>
+                    </div>
+                    <div class="ef-modal-body">
+                        <p class="slds-m-bottom_medium text-color-gray">Zaznacz uczestników, którzy byli obecni, aby wystawić im certyfikaty.</p>
+                        <div style="height: 300px;">
+                            <lightning-datatable
+                                key-field="Id"
+                                data={participantsList}
+                                columns={participantsColumns}
+                                onrowselection={handleParticipantSelection}>
+                            </lightning-datatable>
+                        </div>
+                        <div class="ef-actions slds-m-top_medium">
+                            <button class="ef-btn ef-btn--secondary" onclick={closeParticipantsModal}>Anuluj</button>
+                            <button class="ef-btn ef-btn--primary" onclick={handleGenerateCertificates} disabled={isCertBtnDisabled}>
+                                Generuj Certyfikaty ({selectedParticipantsCount})
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <template if:true={isTrainingModalOpen}>
+            <div class="ef-overlay" onclick={handleOverlayClick}>
+                <div class="ef-modal" onclick={stopPropagation}>
+                    <div class="ef-modal-header">
+                        <h2 class="ef-title">Dodaj nowe szkolenie</h2>
+                        <button class="ef-close" onclick={closeTrainingModal}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="ef-modal-body">
+                        <c-training-form onsuccess={handleTrainingCreateSuccess} oncancel={closeTrainingModal}></c-training-form>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
+</template>

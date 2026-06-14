@@ -1,0 +1,51 @@
+<template>
+    <lightning-record-edit-form 
+        object-api-name="Training__c" 
+        onsuccess={handleSuccess} 
+        onsubmit={handleSubmit}>
+        
+        <lightning-messages></lightning-messages>
+
+        <div class="slds-grid slds-wrap slds-gutters">
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                <lightning-input-field field-name="Name" required></lightning-input-field>
+            </div>
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                <lightning-input-field field-name="Status__c" required></lightning-input-field>
+            </div>
+
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                <lightning-input-field field-name="Start_Date__c" required></lightning-input-field>
+            </div>
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                <lightning-input-field field-name="End_Date__c" required></lightning-input-field>
+            </div>
+
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                <lightning-input-field field-name="Format__c" required></lightning-input-field>
+            </div>
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                <lightning-input-field field-name="Location__c" required></lightning-input-field>
+            </div>
+
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                <lightning-input-field field-name="Max_Participants__c" required></lightning-input-field>
+            </div>
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                <lightning-input-field field-name="Price__c" required></lightning-input-field>
+            </div>
+
+            <div class="slds-col slds-size_1-of-1">
+                <lightning-input-field field-name="Trainer__c"></lightning-input-field>
+            </div>
+            <div class="slds-col slds-size_1-of-1">
+                <lightning-input-field field-name="Description__c"></lightning-input-field>
+            </div>
+        </div>
+
+        <div class="slds-m-top_medium slds-text-align_right slds-border_top slds-p-top_small">
+            <lightning-button label="Anuluj" onclick={handleCancel} class="slds-m-right_small"></lightning-button>
+            <lightning-button variant="brand" type="submit" label="Zapisz szkolenie"></lightning-button>
+        </div>
+    </lightning-record-edit-form>
+</template>

@@ -1,0 +1,52 @@
+<template>
+    <div class="slds-grid slds-wrap slds-gutters">
+        
+        <div class="slds-col slds-size_1-of-1 slds-margin-bottom_medium">
+            <div class="tms-card">
+                <div class="tms-card-header">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#043669" stroke-width="2" class="slds-m-right_xx-small"><rect x="18" y="3" width="4" height="18"></rect><rect x="10" y="8" width="4" height="13"></rect><rect x="2" y="13" width="4" height="8"></rect></svg>
+                    Zapisy w bieżącym roku
+                </div>
+                <div class="chart-container">
+                    <template for:each={barData} for:item="bar">
+                        <div class="bar-wrapper" key={bar.month}>
+                            <div class="bar-value">{bar.value}</div>
+                            <div class="bar-track">
+                                <div class="bar-fill" style={bar.styleHeight}></div>
+                            </div>
+                            <div class="bar-label">{bar.month}</div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <div class="slds-col slds-size_1-of-1">
+            <div class="tms-card">
+                <div class="tms-card-header">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#043669" stroke-width="2" class="slds-m-right_xx-small"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
+                    Format szkoleń
+                </div>
+                <div class="pie-container slds-grid slds-align-center">
+                    <div class="slds-col slds-size_1-of-2 slds-text-align_center">
+                        <div class="donut-chart" style={donutStyle}>
+                            <div class="donut-hole"></div>
+                        </div>
+                    </div>
+                    <div class="slds-col slds-size_1-of-2">
+                        <ul class="legend-list">
+                            <template for:each={pieData} for:item="item">
+                                <li key={item.label} class="legend-item">
+                                    <span class="legend-color" style={item.colorStyle}></span>
+                                    <span class="legend-label">{item.label}</span>
+                                    <span class="legend-value">{item.percent}%</span>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</template>
