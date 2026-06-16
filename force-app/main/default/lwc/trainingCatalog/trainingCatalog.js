@@ -13,12 +13,13 @@ export default class TrainingCatalog extends LightningElement {
     @track showEnrollForm = false;
     @track selectedTrainingId = '';
     @track selectedTrainingName = '';
-
+    @track selectedTrainingPrereq = '';
     @track showDetails = false;
     @track detailsTraining = {};
     @track confirmUnenroll = false;
     @track isUnenrolling = false;
     @track unenrollError = '';
+    @track sortBy = 'date';
 
     formatOptions = [
         { label: 'All formats', value: '' },
@@ -28,15 +29,17 @@ export default class TrainingCatalog extends LightningElement {
     ];
 
     get trainings() {
-        return this.rawTrainings.map(t => {
+        const mapped = this.rawTrainings.map(t => {
             const status = this.enrollmentStatus[t.Id];
             const isEnrolled = status === 'Enrolled';
             const isWaitlisted = status === 'Waitlisted';
             const isCompleted = status === 'Completed';
             const isCancelled = status === 'Cancelled';
+            const isPending = status === 'Pending Approval';
 
             let cardClass = 'tms-card';
             if (isEnrolled) cardClass = 'tms-card tms-card--enrolled';
+            else if (isPending) cardClass = 'tms-card tms-card--pending';
             else if (isWaitlisted) cardClass = 'tms-card tms-card--waitlisted';
             else if (isCompleted) cardClass = 'tms-card tms-card--completed';
             else if (isCancelled) cardClass = 'tms-card tms-card--cancelled';
@@ -44,21 +47,56 @@ export default class TrainingCatalog extends LightningElement {
             return {
                 ...t,
                 isInvolved: !!status,
-                statusLabel: isWaitlisted ? '✓ On waitlist'
+                statusLabel: isPending ? '⏳ Awaiting approval'
+                    : isWaitlisted ? '✓ On waitlist'
                     : isEnrolled ? '✓ Already enrolled'
                     : isCompleted ? '✓ Completed'
                     : isCancelled ? '✕ Cancelled' : '',
-                statusLabelClass: isWaitlisted
-                    ? 'tms-enrolled-label tms-enrolled-label--waitlisted'
-                    : isCompleted
-                        ? 'tms-enrolled-label tms-enrolled-label--completed'
-                        : isCancelled
-                            ? 'tms-enrolled-label tms-enrolled-label--cancelled'
-                            : 'tms-enrolled-label',
+                statusLabelClass: isPending
+                    ? 'tms-enrolled-label tms-enrolled-label--pending'
+                    : isWaitlisted ? 'tms-enrolled-label tms-enrolled-label--waitlisted'
+                    : isCompleted ? 'tms-enrolled-label tms-enrolled-label--completed'
+                    : isCancelled ? 'tms-enrolled-label tms-enrolled-label--cancelled'
+                    : 'tms-enrolled-label',
                 trainerName: t.Trainer__r ? t.Trainer__r.Name : null,
                 cardClass
             };
         });
+
+        return this.sortTrainings(mapped);
+    }
+
+    sortTrainings(list) {
+        const statusRank = {
+            'Enrolled': 1, 'Pending Approval': 2, 'Waitlisted': 3, 'Completed': 4, 'Cancelled': 6
+        };
+        const arr = [...list];
+        switch (this.sortBy) {
+            case 'status':
+                arr.sort((a, b) => {
+                    const ra = statusRank[this.enrollmentStatus[a.Id]] || 5;
+                    const rb = statusRank[this.enrollmentStatus[b.Id]] || 5;
+                    if (ra !== rb) return ra - rb;
+                    return new Date(a.Start_Date__c) - new Date(b.Start_Date__c);
+                });
+                break;
+            case 'price':
+                arr.sort((a, b) => (a.Price__c || 0) - (b.Price__c || 0));
+                break;
+            case 'spots':
+                arr.sort((a, b) => (b.Free_Spots__c || 0) - (a.Free_Spots__c || 0));
+                break;
+            case 'name':
+                arr.sort((a, b) => (a.Name || '').localeCompare(b.Name || ''));
+                break;
+            default: // 'date'
+                arr.sort((a, b) => new Date(a.Start_Date__c) - new Date(b.Start_Date__c));
+        }
+        return arr;
+    }
+
+    handleSortChange(event) {
+        this.sortBy = event.target.value;
     }
 
     get trainingCount() {
@@ -107,7 +145,7 @@ export default class TrainingCatalog extends LightningElement {
             trainerSpecialization: t.Trainer__r ? t.Trainer__r.Specialization__c : null,
             trainerBio: t.Trainer__r ? t.Trainer__r.Bio__c : null,
             enrollmentId: this.enrollmentIds[id],
-            showUnenroll: status === 'Enrolled' || status === 'Waitlisted'
+            showUnenroll: status === 'Enrolled' || status === 'Waitlisted' || status === 'Pending Approval'
         };
         this.confirmUnenroll = false;
         this.isUnenrolling = false;
@@ -130,6 +168,7 @@ export default class TrainingCatalog extends LightningElement {
         const training = this.rawTrainings.find(t => t.Id === trainingId);
         this.selectedTrainingId = trainingId;
         this.selectedTrainingName = training ? training.Name : '';
+        this.selectedTrainingPrereq = training ? training.Prerequisite_Info__c : '';
         this.showEnrollForm = true;
     }
 

@@ -10,7 +10,7 @@ public without sharing class TrainingCatalogController {
     public static CatalogResult getTrainings(String searchTerm, String format) {
 
         String query = 'SELECT Id, Name, Description__c, Start_Date__c, End_Date__c, ' +
-                       'Format__c, Location__c, Price__c, ' +
+                       'Format__c, Location__c, Price__c, Prerequisite_Info__c, ' +
                        'Max_Participants__c, Enrolled_Count__c, Free_Spots__c, ' +
                        'Trainer__r.Name, Trainer__r.Specialization__c, Trainer__r.Bio__c ' +
                        'FROM Training__c WHERE Status__c = \'Active\'';

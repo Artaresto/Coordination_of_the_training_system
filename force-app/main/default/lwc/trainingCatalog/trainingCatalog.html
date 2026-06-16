@@ -32,6 +32,13 @@
                 <option value="Online">Online</option>
                 <option value="Hybrid">Hybrid</option>
             </select>
+            <select class="tms-select" onchange={handleSortChange}>
+                <option value="date">Sort: Date (soonest)</option>
+                <option value="status">Sort: My status</option>
+                <option value="price">Sort: Price (lowest)</option>
+                <option value="spots">Sort: Free spots (most)</option>
+                <option value="name">Sort: Name (A–Z)</option>
+            </select>
         </div>
 
         <div class="tms-grid">
@@ -176,6 +183,7 @@
             <c-enrollment-form
                 training-id={selectedTrainingId}
                 training-name={selectedTrainingName}
+                prerequisite-info={selectedTrainingPrereq}
                 onclose={handleCloseModal}>
             </c-enrollment-form>
         </template>
