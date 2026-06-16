@@ -59,11 +59,13 @@ export default class MyCalendar extends NavigationMixin(LightningElement) {
                         && new Date(e.Training__r.Start_Date__c) > new Date(),
                     chipClass: e.Status__c === 'Cancelled'
                         ? 'cal-chip cal-chip--cancelled'
-                        : e.Status__c === 'Waitlisted'
-                            ? 'cal-chip cal-chip--waitlisted'
-                            : e.Status__c === 'Completed'
-                                ? 'cal-chip cal-chip--completed'
-                                : 'cal-chip'
+                        : e.Status__c === 'Pending Approval'
+                            ? 'cal-chip cal-chip--pending'
+                            : e.Status__c === 'Waitlisted'
+                                ? 'cal-chip cal-chip--waitlisted'
+                                : e.Status__c === 'Completed'
+                                    ? 'cal-chip cal-chip--completed'
+                                    : 'cal-chip'
                 }));
                 const map = {};
                 this.items.forEach(it => {

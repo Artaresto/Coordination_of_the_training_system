@@ -393,3 +393,5 @@
     margin: 0;
     white-space: pre-line;
 }
+
+.cal-chip--pending { background: #2563eb; }
