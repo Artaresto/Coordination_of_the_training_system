@@ -1,40 +1,97 @@
-import { LightningElement } from 'lwc';
+import { LightningElement, track, wire } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
+import getDistinctLocations from '@salesforce/apex/TrainingFormController.getDistinctLocations';
+import getRoomsByLocation from '@salesforce/apex/TrainingFormController.getRoomsByLocation';
 
 export default class TrainingForm extends LightningElement {
-    
+
+    @track selectedLocation = '';
+    @track selectedRoomId = '';
+    @track rooms = [];
+    emptyOptions = [];
+    locationOptions = [];
+
+    @wire(getDistinctLocations)
+    wiredLocations({ data, error }) {
+        if (data) {
+            this.locationOptions = data.map(loc => ({ label: loc, value: loc }));
+        } else if (error) {
+            console.error('Błąd pobierania lokalizacji:', error);
+        }
+    }
+
+    @wire(getRoomsByLocation, { location: '$selectedLocation' })
+    wiredRooms({ data, error }) {
+        if (data) {
+            this.rooms = data;
+            this.selectedRoomId = '';
+        } else if (error) {
+            console.error('Błąd pobierania sal:', error);
+        }
+    }
+
+    get roomOptions() {
+        return this.rooms.map(room => ({
+            label: room.Name + (room.Max_Capacity__c ? ` (maks. ${room.Max_Capacity__c} os.)` : ''),
+            value: room.Id
+        }));
+    }
+
+    get noRoomsAvailable() {
+        return this.selectedLocation && this.rooms.length === 0;
+    }
+
+    get roomPlaceholder() {
+        return this.rooms.length === 0 ? 'Brak sal w tej lokalizacji' : '-- Wybierz salę --';
+    }
+
+    handleLocationChange(event) {
+        this.selectedLocation = event.detail.value;
+        this.selectedRoomId = '';
+        this.rooms = [];
+    }
+
+    handleRoomChange(event) {
+        this.selectedRoomId = event.detail.value;
+    }
+
     handleSubmit(event) {
-        // Zatrzymujemy standardowe wysłanie, aby przeprowadzić własną walidację
-        event.preventDefault(); 
+        event.preventDefault();
         const fields = event.detail.fields;
-        
-        // Prosta walidacja dat po stronie frontendu
+
         const startDate = new Date(fields.Start_Date__c);
         const endDate = new Date(fields.End_Date__c);
-
         if (endDate <= startDate) {
-            this.dispatchEvent(
-                new ShowToastEvent({
-                    title: 'Błąd walidacji',
-                    message: 'Data zakończenia musi być późniejsza niż data rozpoczęcia.',
-                    variant: 'error'
-                })
-            );
-            return; // Przerywamy zapis
+            this.dispatchEvent(new ShowToastEvent({
+                title: 'Błąd walidacji',
+                message: 'Data zakończenia musi być późniejsza niż data rozpoczęcia.',
+                variant: 'error'
+            }));
+            return;
         }
 
-        // Jeśli wszystko ok, wznawiamy wysyłanie do bazy
+        if (!this.selectedLocation) {
+            this.dispatchEvent(new ShowToastEvent({
+                title: 'Błąd walidacji',
+                message: 'Wybierz lokalizację.',
+                variant: 'error'
+            }));
+            return;
+        }
+
+        fields.Location__c = this.selectedLocation;
+        if (this.selectedRoomId) {
+            fields.Room__c = this.selectedRoomId;
+        }
+
         this.template.querySelector('lightning-record-edit-form').submit(fields);
     }
 
     handleSuccess(event) {
-        // Formularz zapisany w bazie. Wysyłamy event "success" do coordinatorDashboard
-        // Przekazujemy ID nowo utworzonego szkolenia w szczegółach (detail)
         this.dispatchEvent(new CustomEvent('success', { detail: event.detail.id }));
     }
 
     handleCancel() {
-        // Użytkownik kliknął Anuluj. Wysyłamy event "cancel" do coordinatorDashboard
         this.dispatchEvent(new CustomEvent('cancel'));
     }
 }
