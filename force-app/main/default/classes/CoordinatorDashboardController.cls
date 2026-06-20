@@ -8,16 +8,64 @@ public with sharing class CoordinatorDashboardController {
                 WITH SECURITY_ENFORCED 
                 ORDER BY Start_Date__c ASC];
     }
+
+    public class EnrollmentWrapper {
+        @AuraEnabled public Id      Id;
+        @AuraEnabled public String  Name;
+        @AuraEnabled public String  ParticipantName;
+        @AuraEnabled public String  TrainingName;
+        @AuraEnabled public Date    EnrollmentDate;
+        @AuraEnabled public String  Status;
+        @AuraEnabled public Boolean HasFile;
+        @AuraEnabled public String  FileTitle;
+        @AuraEnabled public String  FileVersionId;
+    }
     
     @AuraEnabled(cacheable=true)
-    public static List<Enrollment__c> getPendingEnrollments() {
-        return [SELECT Id, Name, Participant__r.Name, Training__r.Name, Enrollment_Date__c, Status__c 
-                FROM Enrollment__c 
-                WHERE Training__r.OwnerId = :UserInfo.getUserId() 
-                // ZMIANA: Szukamy tylko osób na liście rezerwowej (ang. Waitlisted)
-                AND Status__c = 'Waitlisted'
-                WITH SECURITY_ENFORCED 
-                ORDER BY Enrollment_Date__c ASC];
+    public static List<EnrollmentWrapper> getPendingEnrollments() {
+        List<Enrollment__c> enrollments = [
+            SELECT Id, Name, Participant__r.Name, Training__r.Name, Enrollment_Date__c, Status__c
+            FROM Enrollment__c 
+            WHERE Training__r.OwnerId = :UserInfo.getUserId() 
+            AND Status__c IN ('Pending Approval', 'Waitlisted')
+            WITH SECURITY_ENFORCED 
+            ORDER BY Enrollment_Date__c ASC
+        ];
+
+        if (enrollments.isEmpty()) return new List<EnrollmentWrapper>();
+
+        Set<Id> enrollmentIds = new Map<Id, Enrollment__c>(enrollments).keySet();
+        Map<Id, ContentDocumentLink> cdlByEnrollment = new Map<Id, ContentDocumentLink>();
+
+        for (ContentDocumentLink cdl : [
+            SELECT LinkedEntityId, ContentDocumentId, ContentDocument.Title,
+                   ContentDocument.LatestPublishedVersionId
+            FROM ContentDocumentLink
+            WHERE LinkedEntityId IN :enrollmentIds
+        ]) {
+            cdlByEnrollment.put(cdl.LinkedEntityId, cdl);
+        }
+
+        List<EnrollmentWrapper> result = new List<EnrollmentWrapper>();
+        for (Enrollment__c enr : enrollments) {
+            EnrollmentWrapper w = new EnrollmentWrapper();
+            w.Id              = enr.Id;
+            w.Name            = enr.Name;
+            w.ParticipantName = enr.Participant__r != null ? enr.Participant__r.Name : '';
+            w.TrainingName    = enr.Training__r    != null ? enr.Training__r.Name    : '';
+            w.EnrollmentDate  = enr.Enrollment_Date__c;
+            w.Status          = enr.Status__c;
+            w.HasFile         = cdlByEnrollment.containsKey(enr.Id);
+            w.FileTitle       = '';
+            w.FileVersionId   = '';
+            if (cdlByEnrollment.containsKey(enr.Id)) {
+                ContentDocumentLink cdl = cdlByEnrollment.get(enr.Id);
+                w.FileTitle     = cdl.ContentDocument.Title;
+                w.FileVersionId = cdl.ContentDocument.LatestPublishedVersionId;
+            }
+            result.add(w);
+        }
+        return result;
     }
     
     @AuraEnabled(cacheable=true)
@@ -40,7 +88,6 @@ public with sharing class CoordinatorDashboardController {
     public static List<Enrollment__c> getTrainingParticipants(Id trainingId) {
         return [SELECT Id, Name, Participant__r.Name, Status__c, Enrollment_Date__c 
                 FROM Enrollment__c 
-                // ZMIANA: Szukamy osób ze statusem Enrolled lub Completed
                 WHERE Training__c = :trainingId AND Status__c IN ('Enrolled', 'Completed')
                 WITH SECURITY_ENFORCED];
     }
@@ -49,32 +96,25 @@ public with sharing class CoordinatorDashboardController {
     public static void generateCertificates(List<Id> enrollmentIds) {
         List<Enrollment__c> enrollmentsToUpdate = new List<Enrollment__c>();
         List<Certificate__c> certificatesToInsert = new List<Certificate__c>();
-    // 1. Pobierz ID szkoleń, dla których generujemy certyfikaty
+
         List<Enrollment__c> enrollments = [SELECT Id, Training__r.Status__c FROM Enrollment__c WHERE Id IN :enrollmentIds];
         
         for (Enrollment__c enr : enrollments) {
-            // Zmień 'Completed' na status, który oznacza u Ciebie zakończone szkolenie
             if (enr.Training__r.Status__c != 'Completed') {
                 throw new AuraHandledException('Nie można wystawić certyfikatu dla szkolenia, które nie jest jeszcze ukończone.');
             }
         }
 
         for (Id enrId : enrollmentIds) {
-            // ZMIANA: Po wygenerowaniu certyfikatu zmieniamy status na 'Completed'
             enrollmentsToUpdate.add(new Enrollment__c(Id = enrId, Status__c = 'Completed'));
-            
             Certificate__c cert = new Certificate__c();
             cert.Enrollment__c = enrId;
             cert.Issue_Date__c = Date.today();
             certificatesToInsert.add(cert);
         }
 
-        if (!enrollmentsToUpdate.isEmpty()) {
-            update as user enrollmentsToUpdate;
-        }
-        if (!certificatesToInsert.isEmpty()) {
-            insert as user certificatesToInsert;
-        }
+        if (!enrollmentsToUpdate.isEmpty()) update as user enrollmentsToUpdate;
+        if (!certificatesToInsert.isEmpty()) insert as user certificatesToInsert;
     }
 
     @AuraEnabled(cacheable=true)
@@ -111,7 +151,7 @@ public with sharing class CoordinatorDashboardController {
         return result;
     }
 
-@AuraEnabled(cacheable=true)
+    @AuraEnabled(cacheable=true)
     public static List<Map<String, Object>> getTrainingFormats() {
         List<Map<String, Object>> result = new List<Map<String, Object>>();
         Id currentUserId = UserInfo.getUserId();
@@ -119,15 +159,14 @@ public with sharing class CoordinatorDashboardController {
         List<AggregateResult> aggResults = [
             SELECT Format__c, COUNT(Id) recordCount
             FROM Training__c
-            // ZMIANA: 'Aktywne', 'Planowane' na 'Active', 'Planned'
             WHERE Status__c IN ('Active', 'Planned') AND OwnerId = :currentUserId
             GROUP BY Format__c
         ];
 
         Map<String, String> formatColors = new Map<String, String>{
             'Stationary' => '#043669',
-            'Online'      => '#3b82f6',
-            'Hybrid'   => '#93c5fd'
+            'Online'     => '#3b82f6',
+            'Hybrid'     => '#93c5fd'
         };
 
         for (AggregateResult ar : aggResults) {

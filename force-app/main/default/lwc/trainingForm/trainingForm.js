@@ -8,6 +8,8 @@ export default class TrainingForm extends LightningElement {
     @track selectedLocation = '';
     @track selectedRoomId = '';
     @track rooms = [];
+    @track requiresCertificate = false;
+    @track prerequisiteInfo = '';
     emptyOptions = [];
     locationOptions = [];
 
@@ -43,6 +45,17 @@ export default class TrainingForm extends LightningElement {
 
     get roomPlaceholder() {
         return this.rooms.length === 0 ? 'Brak sal w tej lokalizacji' : '-- Wybierz salę --';
+    }
+
+    handleCertificateToggle(event) {
+        this.requiresCertificate = event.target.checked;
+        if (!this.requiresCertificate) {
+            this.prerequisiteInfo = '';
+        }
+    }
+
+    handlePrerequisiteChange(event) {
+        this.prerequisiteInfo = event.detail.value;
     }
 
     handleLocationChange(event) {
@@ -83,6 +96,17 @@ export default class TrainingForm extends LightningElement {
         if (this.selectedRoomId) {
             fields.Room__c = this.selectedRoomId;
         }
+
+        if (this.requiresCertificate && !this.prerequisiteInfo.trim()) {
+            this.dispatchEvent(new ShowToastEvent({
+                title: 'Błąd walidacji',
+                message: 'Podaj opis wymaganego certyfikatu.',
+                variant: 'error'
+            }));
+            return;
+        }
+
+        fields.Prerequisite_Info__c = this.requiresCertificate ? this.prerequisiteInfo : '';
 
         this.template.querySelector('lightning-record-edit-form').submit(fields);
     }
