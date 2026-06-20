@@ -29,6 +29,11 @@
                 <default>false</default>
                 <label>Waitlisted</label>
             </value>
+            <value>
+                <fullName>Pending Approval</fullName>
+                <default>false</default>
+                <label>Pending Approval</label>
+            </value>
         </valueSetDefinition>
     </valueSet>
 </CustomField>

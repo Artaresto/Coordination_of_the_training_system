@@ -75,6 +75,27 @@
             </div>
         </div>
 
+        <div class="slds-col slds-size_1-of-1">
+            <lightning-input
+                type="checkbox"
+                label="Kurs wymaga certyfikatu"
+                checked={requiresCertificate}
+                onchange={handleCertificateToggle}>
+            </lightning-input>
+        </div>
+
+        <template if:true={requiresCertificate}>
+            <div class="slds-col slds-size_1-of-1">
+                <lightning-textarea
+                    label="Opis wymaganego certyfikatu"
+                    placeholder="Np. Certyfikat ukończenia kursu podstawowego Excel (min. poziom B)"
+                    value={prerequisiteInfo}
+                    onchange={handlePrerequisiteChange}
+                    required>
+                </lightning-textarea>
+            </div>
+        </template>
+
         <div class="slds-m-top_medium slds-text-align_right slds-border_top slds-p-top_small">
             <lightning-button label="Anuluj" onclick={handleCancel} class="slds-m-right_small"></lightning-button>
             <lightning-button variant="brand" type="submit" label="Zapisz szkolenie"></lightning-button>

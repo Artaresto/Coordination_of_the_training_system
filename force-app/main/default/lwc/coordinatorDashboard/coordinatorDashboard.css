@@ -135,3 +135,10 @@
 
 /* Dostosowanie datatable na białym tle */
 .table-container { border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
+
+.ef-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px; }
+.ef-btn { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; }
+.ef-btn--primary { background: #043669; color: #fff; }
+.ef-btn--primary:hover { background: #032850; }
+.ef-btn--secondary { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+.ef-btn--secondary:hover { background: #e5e7eb; }

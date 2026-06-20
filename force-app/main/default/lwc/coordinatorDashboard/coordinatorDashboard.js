@@ -26,6 +26,10 @@ export default class CoordinatorDashboard extends NavigationMixin(LightningEleme
     @track trainingsEndingSoon = [];
     @track certificatesCount = 0;
     
+    @track isCertPreviewOpen = false;
+    @track certPreviewUrl = '';
+    @track certPreviewTitle = '';
+
     // Zmienne dla Modali
     @track isTrainingModalOpen = false;
     @track isParticipantsModalOpen = false;
@@ -45,11 +49,21 @@ export default class CoordinatorDashboard extends NavigationMixin(LightningEleme
     wiredCertificatesResult;
 
     enrollmentColumns = [
-        { label: 'Status', fieldName: 'Status__c', type: 'text', initialWidth: 130 },
-        { label: 'Uczestnik', fieldName: 'ParticipantName', type: 'text' },
-        { label: 'Szkolenie', fieldName: 'TrainingName', type: 'text' },
-        { type: 'action', typeAttributes: { rowActions: ENROLLMENT_ACTIONS } }
+    { label: 'Status',      fieldName: 'Status__c',          type: 'text', initialWidth: 160 },
+    { label: 'Uczestnik',   fieldName: 'ParticipantName',     type: 'text' },
+    { label: 'Szkolenie',   fieldName: 'TrainingName',        type: 'text' },
+    { label: 'Data zapisu', fieldName: 'EnrollmentDate', type: 'date', initialWidth: 130 },
+    { label: 'Certyfikat',  fieldName: 'FileTitle',           type: 'text', initialWidth: 180 },
+    { type: 'action', typeAttributes: { rowActions: this._getRowActions.bind(this) } }
     ];
+
+    _getRowActions(row, doneCallback) {
+        const actions = [...ENROLLMENT_ACTIONS];
+        if (row.HasFile && row.FileVersionId) {
+            actions.unshift({ label: 'Zobacz certyfikat', name: 'view_certificate', iconName: 'utility:attach' });
+        }
+        doneCallback(actions);
+    }       
 
     participantsColumns = [
         { label: 'Uczestnik', fieldName: 'ParticipantName', type: 'text' },
@@ -94,11 +108,7 @@ export default class CoordinatorDashboard extends NavigationMixin(LightningEleme
     wiredEnrollments(result) {
         this.wiredEnrollmentsResult = result;
         if (result.data) {
-            this.pendingEnrollments = result.data.map(enr => ({
-                ...enr,
-                ParticipantName: enr.Participant__r ? enr.Participant__r.Name : '',
-                TrainingName: enr.Training__r ? enr.Training__r.Name : ''
-            }));
+            this.pendingEnrollments = result.data;
         }
     }
 
@@ -180,21 +190,38 @@ export default class CoordinatorDashboard extends NavigationMixin(LightningEleme
     handleRowAction(event) {
         const actionName = event.detail.action.name;
         const row = event.detail.row;
-        let newStatus = '';
 
-        if (actionName === 'accept' || actionName === 'move_from_waitlist') {
-            newStatus = 'Zapisany';
-        } else if (actionName === 'reject') {
-            newStatus = 'Anulowany';
+        if (actionName === 'view_certificate') {
+            this.certPreviewTitle = row.FileTitle || 'Certyfikat';
+            this.certPreviewUrl = `/sfc/servlet.shepherd/version/download/${row.FileVersionId}`;
+            this.isCertPreviewOpen = true;
+            return;
         }
 
-        updateEnrollmentStatus({ enrollmentId: row.Id, newStatus: newStatus })
+        let newStatus = '';
+        if (actionName === 'accept' || actionName === 'move_from_waitlist') {
+            newStatus = 'Enrolled';
+        } else if (actionName === 'reject') {
+            newStatus = 'Cancelled';
+        }
+
+        updateEnrollmentStatus({ enrollmentId: row.Id, newStatus })
             .then(() => {
                 this.showToast('Sukces', `Status zmieniony na: ${newStatus}`, 'success');
-                refreshApex(this.wiredEnrollmentsResult);
-                refreshApex(this.wiredTrainingsResult);
+                return refreshApex(this.wiredEnrollmentsResult);
             })
-            .catch(error => this.showToast('Błąd', error.body.message, 'error'));
+            .then(() => refreshApex(this.wiredTrainingsResult))
+            .catch(error => this.showToast('Błąd', error.body ? error.body.message : error.message, 'error'));
+    }
+
+    closeCertPreview() {
+        this.isCertPreviewOpen = false;
+        this.certPreviewUrl = '';
+        this.certPreviewTitle = '';
+    }
+
+    downloadCert() {
+        window.open(this.certPreviewUrl, '_blank');
     }
 
     openTrainingModal() { this.isTrainingModalOpen = true; }
