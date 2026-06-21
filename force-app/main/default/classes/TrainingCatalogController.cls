@@ -50,17 +50,4 @@ public without sharing class TrainingCatalogController {
         return result;
     }
 
-    // Sprawdza, czy zalogowany uzytkownik ma profil System Administrator -
-    // uzywane do automatycznego przekierowania admina ze strony glownej na panel admina,
-    // zamiast skomplikowanej konfiguracji Page Variations/Audience w Experience Builderze.
-    @AuraEnabled(cacheable=true)
-    public static Boolean isCurrentUserAdmin() {
-        List<User> currentUser = [
-            SELECT Profile.Name
-            FROM User
-            WHERE Id = :UserInfo.getUserId()
-            LIMIT 1
-        ];
-        return !currentUser.isEmpty() && currentUser[0].Profile.Name == 'System Administrator';
-    }
 }

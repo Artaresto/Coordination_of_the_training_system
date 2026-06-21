@@ -47,7 +47,6 @@ export default class MyCalendar extends NavigationMixin(LightningElement) {
                     format: e.Training__r.Format__c,
                     location: e.Training__r.Location__c,
                     description: e.Training__r.Description__c,
-                    dateKey: this.toDateKey(new Date(e.Training__r.Start_Date__c)),
                     isCompleted: e.Status__c === 'Completed',
                     trainingRating: e.Training_Rating__c || 0,
                     trainerRating: e.Trainer_Rating__c || 0,
@@ -67,13 +66,34 @@ export default class MyCalendar extends NavigationMixin(LightningElement) {
                                     ? 'cal-chip cal-chip--completed'
                                     : 'cal-chip'
                 }));
+
+                // rozkładamy każde szkolenie na wszystkie dni od startu do końca
                 const map = {};
                 this.items.forEach(it => {
-                    (map[it.dateKey] = map[it.dateKey] || []).push(it);
+                    const start = new Date(it.startDate);
+                    const end = it.endDate ? new Date(it.endDate) : start;
+                    this.eachDateKey(start, end).forEach(key => {
+                        (map[key] = map[key] || []).push(it);
+                    });
                 });
                 this.byDay = map;
             })
             .catch(error => { console.error(error); });
+    }
+
+    // zwraca klucze dni od start do end włącznie (np. szkolenie 3-dniowe = 3 klucze)
+    eachDateKey(start, end) {
+        const keys = [];
+        const cur = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+        const last = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+        if (last < cur) {
+            return [this.toDateKey(cur)];
+        }
+        while (cur <= last) {
+            keys.push(this.toDateKey(cur));
+            cur.setDate(cur.getDate() + 1);
+        }
+        return keys;
     }
 
     toDateKey(d) {
