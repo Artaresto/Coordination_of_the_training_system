@@ -27,6 +27,11 @@ function defaultTimeStr() {
     return '09:00';
 }
 
+function normalizeTime(value) {
+    // lightning-input type="time" zwraca HH:mm:ss.SSS — bierzemy tylko HH:mm
+    return value ? value.slice(0, 5) : value;
+}
+
 export default class TrainingForm extends LightningElement {
 
     @track selectedLocation = '';
@@ -153,7 +158,7 @@ export default class TrainingForm extends LightningElement {
     }
 
     handleStartTimeChange(event) {
-        this.startTimeStr = event.detail.value;
+        this.startTimeStr = normalizeTime(event.detail.value);
         this.recalculateEndTimeFromDuration();
     }
 
@@ -163,7 +168,7 @@ export default class TrainingForm extends LightningElement {
     }
 
     handleEndTimeChange(event) {
-        this.endTimeStr = event.detail.value;
+        this.endTimeStr = normalizeTime(event.detail.value);
         this.recalculateDurationFromEndTime();
     }
 
