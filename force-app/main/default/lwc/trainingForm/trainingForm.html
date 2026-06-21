@@ -56,43 +56,61 @@
 
         <div class="slds-grid slds-wrap slds-gutters">
             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
-                <lightning-input-field field-name="Format__c" required></lightning-input-field>
-            </div>
-            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
                 <lightning-combobox
-                    label="Location"
-                    value={selectedLocation}
-                    options={locationOptions}
-                    onchange={handleLocationChange}
-                    placeholder="-- Wybierz lokalizację --">
+                    label="Format"
+                    value={selectedFormat}
+                    options={formatOptions}
+                    onchange={handleFormatChange}
+                    placeholder="-- Wybierz format --"
+                    required>
                 </lightning-combobox>
             </div>
+            <template if:true={showRoomSection}>
+                <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
+                    <lightning-input
+                        type="checkbox"
+                        label="Szkolenie wymaga sprzętu komputerowego"
+                        checked={requiresComputers}
+                        onchange={handleComputersToggle}>
+                    </lightning-input>
+                </div>
 
-            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
-                <template if:true={selectedLocation}>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
                     <lightning-combobox
-                        label="Room"
-                        value={selectedRoomId}
-                        options={roomOptions}
-                        onchange={handleRoomChange}
-                        placeholder={roomPlaceholder}
-                        disabled={noRoomsAvailable}>
+                        label="Location"
+                        value={selectedLocation}
+                        options={locationOptions}
+                        onchange={handleLocationChange}
+                        placeholder="-- Wybierz lokalizację --">
                     </lightning-combobox>
-                    <template if:true={noRoomsAvailable}>
-                        <p class="slds-text-color_error slds-m-top_xx-small">
-                            Brak sal w tej lokalizacji.
-                        </p>
+                </div>
+
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
+                    <template if:true={selectedLocation}>
+                        <lightning-combobox
+                            label="Room"
+                            value={selectedRoomId}
+                            options={roomOptions}
+                            onchange={handleRoomChange}
+                            placeholder={roomPlaceholder}
+                            disabled={noRoomsAvailable}>
+                        </lightning-combobox>
+                        <template if:true={noRoomsAvailable}>
+                            <p class="slds-text-color_error slds-m-top_xx-small">
+                                Brak sal w tej lokalizacji.
+                            </p>
+                        </template>
                     </template>
-                </template>
-                <template if:false={selectedLocation}>
-                    <lightning-combobox
-                        label="Room"
-                        options={emptyOptions}
-                        placeholder="Najpierw wybierz lokalizację"
-                        disabled>
-                    </lightning-combobox>
-                </template>
-            </div>
+                    <template if:false={selectedLocation}>
+                        <lightning-combobox
+                            label="Room"
+                            options={emptyOptions}
+                            placeholder="Najpierw wybierz lokalizację"
+                            disabled>
+                        </lightning-combobox>
+                    </template>
+                </div>
+            </template>
             <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
                 <lightning-input-field field-name="Max_Participants__c" required></lightning-input-field>
             </div>

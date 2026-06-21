@@ -1,9 +1,17 @@
 public without sharing class TrainingFormController {
 
     @AuraEnabled(cacheable=true)
-    public static List<Room__c> getRoomsByLocation(String location) {
+    public static List<Room__c> getRoomsByLocation(String location, Boolean requiresComputers) {
         if (String.isBlank(location)) {
             return new List<Room__c>();
+        }
+        if (requiresComputers == true) {
+            return [
+                SELECT Id, Name, Max_Capacity__c, Has_computers__c, Location__c
+                FROM Room__c
+                WHERE Location__c = :location AND Has_computers__c = true
+                ORDER BY Name ASC
+            ];
         }
         return [
             SELECT Id, Name, Max_Capacity__c, Has_computers__c, Location__c

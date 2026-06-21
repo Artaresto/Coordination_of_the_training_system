@@ -10,6 +10,7 @@ const RECURRENCE_UNIT_OPTIONS = [
     { label: 'miesiące', value: 'month' }
 ];
 
+
 const MAX_OCCURRENCES = 52;
 const DEFAULT_DURATION_MINUTES = 120;
 
@@ -34,6 +35,8 @@ export default class TrainingForm extends LightningElement {
     @track requiresCertificate = false;
     @track prerequisiteInfo = '';
     @track isSaving = false;
+    @track selectedFormat = '';
+    @track requiresComputers = false;
 
     // Start - data i godzina jako osobne pola, żeby móc liczyć koniec/czas trwania na żywo
     @track startDateStr = defaultDateStr();
@@ -49,6 +52,12 @@ export default class TrainingForm extends LightningElement {
     @track recurrenceUnit = 'week';
     @track recurrenceInterval = 1;
     @track recurrenceCount = 4;
+
+    formatOptions = [
+        { label: 'Stationary', value: 'Stationary' },
+        { label: 'Online', value: 'Online' },
+        { label: 'Hybrid', value: 'Hybrid' }
+    ];
 
     emptyOptions = [];
     locationOptions = [];
@@ -67,7 +76,7 @@ export default class TrainingForm extends LightningElement {
         }
     }
 
-    @wire(getRoomsByLocation, { location: '$selectedLocation' })
+    @wire(getRoomsByLocation, { location: '$selectedLocation', requiresComputers: '$requiresComputers' })
     wiredRooms({ data, error }) {
         if (data) {
             this.rooms = data;
@@ -177,6 +186,23 @@ export default class TrainingForm extends LightningElement {
         this.rooms = [];
     }
 
+    get showRoomSection() {
+        return this.selectedFormat === 'Stationary' || this.selectedFormat === 'Hybrid';
+    }
+
+    handleFormatChange(event) {
+        this.selectedFormat = event.detail.value;
+        this.selectedLocation = '';
+        this.selectedRoomId = '';
+        this.rooms = [];
+    }
+
+    handleComputersToggle(event) {
+        this.requiresComputers = event.target.checked;
+        this.selectedRoomId = '';
+        this.rooms = [];
+    }
+
     handleRoomChange(event) {
         this.selectedRoomId = event.detail.value;
     }
@@ -217,8 +243,8 @@ export default class TrainingForm extends LightningElement {
             return;
         }
 
-        if (!this.selectedLocation) {
-            this.showError('Wybierz lokalizację.');
+        if (this.showRoomSection && !this.selectedLocation) {
+            this.showError('Wybierz lokalizację dla szkolenia stacjonarnego/hybrydowego.');
             return;
         }
 
@@ -253,6 +279,7 @@ export default class TrainingForm extends LightningElement {
 
         fields.Start_Date__c = startDate.toISOString();
         fields.End_Date__c = lastEnd.toISOString();
+        fields.Format__c = this.selectedFormat;
 
         const sessions = sessionStarts.map(s => ({
             Start_Time__c: s.toISOString(),

@@ -32,9 +32,12 @@ public without sharing class TrainingCatalogController {
         Id contactId = [SELECT ContactId FROM User WHERE Id = :UserInfo.getUserId()].ContactId;
         if (contactId != null) {
             for (Enrollment__c e : [
-                SELECT Id, Training__c, Status__c FROM Enrollment__c
+                SELECT Id, Training__c, Status__c, Cancellation_Unlocked__c FROM Enrollment__c
                 WHERE Participant__c = :contactId
             ]) {
+                // Rekord Cancelled + odblokowany traktujemy jak brak zapisu — pomijamy go całkowicie
+                if (e.Status__c == 'Cancelled' && e.Cancellation_Unlocked__c) continue;
+
                 if (e.Status__c != 'Cancelled' || !statusByTraining.containsKey(e.Training__c)) {
                     statusByTraining.put(e.Training__c, e.Status__c);
                     idByTraining.put(e.Training__c, e.Id);

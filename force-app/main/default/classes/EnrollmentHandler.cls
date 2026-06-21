@@ -17,13 +17,18 @@ public class EnrollmentHandler {
 
         Set<String> existingKeys = new Set<String>();
         Set<String> cancelledKeys = new Set<String>();
+        Set<String> unlockedKeys = new Set<String>();
         for (Enrollment__c e : [
-            SELECT Participant__c, Training__c, Status__c FROM Enrollment__c
+            SELECT Participant__c, Training__c, Status__c, Cancellation_Unlocked__c FROM Enrollment__c
             WHERE Training__c IN :trainingIds
         ]) {
             String key = e.Participant__c + '_' + e.Training__c;
             if (e.Status__c == 'Cancelled') {
-                cancelledKeys.add(key);
+                if (e.Cancellation_Unlocked__c) {
+                    unlockedKeys.add(key);
+                } else {
+                    cancelledKeys.add(key);
+                }
             } else {
                 existingKeys.add(key);
             }
@@ -117,6 +122,35 @@ public class EnrollmentHandler {
                 }
             }
         }
+    }
+
+    public static void afterInsert(List<Enrollment__c> newList) {
+        Set<Id> trainingIds = new Set<Id>();
+        Set<Id> participantIds = new Set<Id>();
+        for (Enrollment__c e : newList) {
+            if (e.Status__c == 'Enrolled' || e.Status__c == 'Waitlisted') {
+                trainingIds.add(e.Training__c);
+                participantIds.add(e.Participant__c);
+            }
+        }
+        if (trainingIds.isEmpty()) return;
+
+        List<Enrollment__c> oldCancelled = [
+            SELECT Id FROM Enrollment__c
+            WHERE Training__c IN :trainingIds
+            AND Participant__c IN :participantIds
+            AND Status__c = 'Cancelled'
+            AND Cancellation_Unlocked__c = true
+        ];
+
+        Set<Id> newIds = new Map<Id, Enrollment__c>(newList).keySet();
+        List<Enrollment__c> toDelete = new List<Enrollment__c>();
+        for (Enrollment__c e : oldCancelled) {
+            if (!newIds.contains(e.Id)) {
+                toDelete.add(e);
+            }
+        }
+        if (!toDelete.isEmpty()) delete toDelete;
     }
 
     public static void afterUpdate(List<Enrollment__c> newList, Map<Id, Enrollment__c> oldMap) {

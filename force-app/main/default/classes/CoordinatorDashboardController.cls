@@ -97,6 +97,25 @@ public with sharing class CoordinatorDashboardController {
                 WITH SECURITY_ENFORCED];
     }
 
+
+    @AuraEnabled
+    public static List<Enrollment__c> getCancelledEnrollments(Id trainingId) {
+        return [SELECT Id, Name, Participant__r.Name, Status__c, Enrollment_Date__c, Cancellation_Unlocked__c
+                FROM Enrollment__c 
+                WHERE Training__c = :trainingId 
+                AND Status__c = 'Cancelled' 
+                AND Cancellation_Unlocked__c = false
+                WITH SECURITY_ENFORCED
+                ORDER BY Enrollment_Date__c ASC];
+    }
+
+    @AuraEnabled
+    public static void unlockEnrollment(Id enrollmentId) {
+        Enrollment__c enrollment = [SELECT Id, Cancellation_Unlocked__c FROM Enrollment__c WHERE Id = :enrollmentId WITH SECURITY_ENFORCED LIMIT 1];
+        enrollment.Cancellation_Unlocked__c = true;
+        update as user enrollment;
+    }
+
     @AuraEnabled
     public static void generateCertificates(List<Id> enrollmentIds) {
         List<Enrollment__c> enrollmentsToUpdate = new List<Enrollment__c>();

@@ -12,6 +12,8 @@ import updateEnrollmentStatus from '@salesforce/apex/CoordinatorDashboardControl
 import getEnrollmentsPerMonth from '@salesforce/apex/CoordinatorDashboardController.getEnrollmentsPerMonth';
 import getTrainingFormats from '@salesforce/apex/CoordinatorDashboardController.getTrainingFormats';
 import getTrainingsEndingSoon from '@salesforce/apex/CoordinatorDashboardController.getTrainingsEndingSoon';
+import getCancelledEnrollments from '@salesforce/apex/CoordinatorDashboardController.getCancelledEnrollments';
+import unlockEnrollment from '@salesforce/apex/CoordinatorDashboardController.unlockEnrollment';
 
 const ENROLLMENT_ACTIONS = [
     { label: 'Zatwierdź', name: 'accept', iconName: 'utility:check' },
@@ -44,6 +46,7 @@ export default class CoordinatorDashboard extends NavigationMixin(LightningEleme
 
     // Zmienne dla Listy Uczestników (modal "Zarządzaj uczestnikami")
     @track allParticipants = [];      // wszyscy uczestnicy danego szkolenia
+    @track cancelledParticipants = [];
     @track selectedParticipants = []; // zaznaczeni do wystawienia certyfikatu (tylko z zakładki "Do ukończenia")
     @track participantsActiveTab = 'pending'; // 'pending' | 'completed'
     selectedTrainingId = null;
@@ -77,6 +80,22 @@ export default class CoordinatorDashboard extends NavigationMixin(LightningEleme
     completedParticipantsColumns = [
         { label: 'Uczestnik', fieldName: 'ParticipantName', type: 'text' },
         { label: 'Data zapisu', fieldName: 'Enrollment_Date__c', type: 'date' }
+    ];
+
+    cancelledParticipantsColumns = [
+        { label: 'Uczestnik', fieldName: 'ParticipantName', type: 'text' },
+        { label: 'Data rezygnacji', fieldName: 'Enrollment_Date__c', type: 'date', initialWidth: 160 },
+        { label: 'Odblokowany', fieldName: 'unlockedLabel', type: 'text', initialWidth: 130 },
+        {
+            type: 'button',
+            initialWidth: 140,
+            typeAttributes: {
+                label: 'Odblokuj',
+                name: 'unlock',
+                variant: 'brand',
+                disabled: { fieldName: 'isAlreadyUnlocked' }
+            }
+        }
     ];
 
     connectedCallback() {
@@ -127,6 +146,18 @@ export default class CoordinatorDashboard extends NavigationMixin(LightningEleme
 
     showCompletedTab() {
         this.participantsActiveTab = 'completed';
+    }
+
+    get isCancelledTabActive() {
+        return this.participantsActiveTab === 'cancelled';
+    }
+
+    get cancelledTabClass() {
+        return this.isCancelledTabActive ? 'tms-subtab tms-subtab--active' : 'tms-subtab';
+    }
+
+    showCancelledTab() {
+        this.participantsActiveTab = 'cancelled';
     }
 
     // getMyTrainings NIE jest cacheable (wykonuje DML, żeby przeliczyć status na podstawie dat),
@@ -293,6 +324,15 @@ export default class CoordinatorDashboard extends NavigationMixin(LightningEleme
                     ParticipantName: enr.Participant__r ? enr.Participant__r.Name : ''
                 }));
                 this.selectedParticipants = [];
+                return getCancelledEnrollments({ trainingId: this.selectedTrainingId });
+            })
+            .then(cancelled => {
+                this.cancelledParticipants = cancelled.map(enr => ({
+                    ...enr,
+                    ParticipantName: enr.Participant__r ? enr.Participant__r.Name : '',
+                    isAlreadyUnlocked: enr.Cancellation_Unlocked__c === true,
+                    unlockedLabel: enr.Cancellation_Unlocked__c ? 'Tak' : 'Nie'
+                }));
                 this.isParticipantsModalOpen = true;
             })
             .catch(() => this.showToast('Błąd', 'Nie udało się pobrać uczestników.', 'error'));
@@ -302,7 +342,29 @@ export default class CoordinatorDashboard extends NavigationMixin(LightningEleme
         this.isParticipantsModalOpen = false;
         this.selectedTrainingId = null;
         this.allParticipants = [];
+        this.cancelledParticipants = [];
         this.selectedParticipants = [];
+    }
+
+    handleCancelledRowAction(event) {
+        const actionName = event.detail.action.name;
+        const row = event.detail.row;
+        if (actionName === 'unlock') {
+            unlockEnrollment({ enrollmentId: row.Id })
+                .then(() => {
+                    this.showToast('Sukces', `Odblokowano możliwość ponownego zapisu dla: ${row.ParticipantName}`, 'success');
+                    return getCancelledEnrollments({ trainingId: this.selectedTrainingId });
+                })
+                .then(cancelled => {
+                    this.cancelledParticipants = cancelled.map(enr => ({
+                        ...enr,
+                        ParticipantName: enr.Participant__r ? enr.Participant__r.Name : '',
+                        isAlreadyUnlocked: enr.Cancellation_Unlocked__c === true,
+                        unlockedLabel: enr.Cancellation_Unlocked__c ? 'Tak' : 'Nie'
+                    }));
+                })
+                .catch(error => this.showToast('Błąd', error.body ? error.body.message : 'Błąd odblokowania.', 'error'));
+        }
     }
 
     handleParticipantSelection(event) {

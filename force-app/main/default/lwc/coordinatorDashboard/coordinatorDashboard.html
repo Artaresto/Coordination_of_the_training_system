@@ -221,6 +221,7 @@
                         <div class="tms-subtabs">
                             <button class={pendingTabClass} onclick={showPendingTab}>Do ukończenia ({pendingParticipants.length})</button>
                             <button class={completedTabClass} onclick={showCompletedTab}>Ukończeni ({completedParticipants.length})</button>
+                            <button class={cancelledTabClass} onclick={showCancelledTab}>Rezygnacje ({cancelledParticipants.length})</button>
                         </div>
 
                         <template if:true={isPendingTabActive}>
@@ -246,6 +247,26 @@
                                 </template>
                                 <template if:false={hasCompletedParticipants}>
                                     <p class="empty-msg">Nikt jeszcze nie ukończył tego szkolenia.</p>
+                                </template>
+                            </div>
+                        </template>
+
+                        <template if:true={isCancelledTabActive}>
+                            <div style="height: 300px;">
+                                <template if:true={cancelledParticipants.length}>
+                                    <p style="font-size: 13px; color: #6b7280; margin-bottom: 8px; padding: 4px 0;">
+                                        Kliknij „Odblokuj", aby pozwolić uczestnikowi ponownie zapisać się na szkolenie.
+                                    </p>
+                                    <lightning-datatable
+                                        key-field="Id"
+                                        data={cancelledParticipants}
+                                        columns={cancelledParticipantsColumns}
+                                        hide-checkbox-column
+                                        onrowaction={handleCancelledRowAction}>
+                                    </lightning-datatable>
+                                </template>
+                                <template if:false={cancelledParticipants.length}>
+                                    <p class="empty-msg">Brak osób, które zrezygnowały z tego szkolenia.</p>
                                 </template>
                             </div>
                         </template>
