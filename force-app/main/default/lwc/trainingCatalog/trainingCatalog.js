@@ -1,6 +1,5 @@
 import { LightningElement, track } from 'lwc';
 import getTrainings from '@salesforce/apex/TrainingCatalogController.getTrainings';
-import isCurrentUserAdmin from '@salesforce/apex/TrainingCatalogController.isCurrentUserAdmin';
 import cancelEnrollment from '@salesforce/apex/MyTrainingsController.cancelEnrollment';
 
 export default class TrainingCatalog extends LightningElement {
@@ -105,24 +104,7 @@ export default class TrainingCatalog extends LightningElement {
     }
 
     connectedCallback() {
-        isCurrentUserAdmin()
-            .then(isAdmin => {
-                if (isAdmin) {
-                    // Strony Experience Cloud mają prefiks ścieżki (np. "/s/"), inny niż
-                    // sam goły adres origin - liczymy go dynamicznie z bieżącej ścieżki,
-                    // zamiast zakładać na sztywno "/s/" (poprzedni błąd: brak prefiksu
-                    // powodował "URL No Longer Exists").
-                    const pathSegments = window.location.pathname.split('/').filter(Boolean);
-                    const sitePrefix = pathSegments.length > 0 ? '/' + pathSegments[0] : '';
-                    window.location.href = `${sitePrefix}/admindashboard`;
-                } else {
-                    this.loadTrainings();
-                }
-            })
-            .catch(() => {
-                // W razie błędu sprawdzania profilu, nie blokujemy strony - pokazujemy zwykły katalog.
-                this.loadTrainings();
-            });
+        this.loadTrainings();
     }
 
     loadTrainings() {
