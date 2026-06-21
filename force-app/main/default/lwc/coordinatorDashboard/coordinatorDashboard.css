@@ -59,6 +59,20 @@
 
 .tms-btn:hover { background: #032d57; }
 
+.tms-btn-logout {
+    background: white;
+    color: #dc2626;
+    border: 1px solid #dc2626;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.tms-btn-logout:hover { background: #fef2f2; }
+
 /* Grid i Karty - bazujące na Twoim tms-card */
 .tms-grid-main {
     display: grid;
@@ -135,6 +149,15 @@
 
 /* Dostosowanie datatable na białym tle */
 .table-container { border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
+
+.tms-subtabs { display: flex; gap: 8px; margin-bottom: 14px; border-bottom: 1px solid #e5e7eb; }
+.tms-subtab {
+    background: none; border: none; padding: 8px 4px; margin-right: 12px;
+    font-size: 14px; font-weight: 600; color: #6b7280; cursor: pointer;
+    border-bottom: 2px solid transparent;
+}
+.tms-subtab--active { color: #043669; border-bottom-color: #043669; }
+
 
 .ef-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 8px; }
 .ef-btn { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; }

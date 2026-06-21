@@ -1,30 +1,64 @@
 <template>
     <lightning-record-edit-form 
         object-api-name="Training__c" 
-        onsuccess={handleSuccess} 
         onsubmit={handleSubmit}>
         
         <lightning-messages></lightning-messages>
 
         <div class="slds-grid slds-wrap slds-gutters">
-            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+            <div class="slds-col slds-size_1-of-1">
                 <lightning-input-field field-name="Name" required></lightning-input-field>
             </div>
-            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                <lightning-input-field field-name="Status__c" required></lightning-input-field>
-            </div>
+        </div>
 
-            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                <lightning-input-field field-name="Start_Date__c" required></lightning-input-field>
+        <div class="slds-box slds-m-top_small slds-m-bottom_small" style="background:#f8fafc;">
+            <p class="slds-text-title_caps slds-m-bottom_small" style="color:#6b7280;">Termin i czas trwania</p>
+            <div class="slds-grid slds-wrap slds-gutters">
+                <div class="slds-col slds-size_1-of-2 slds-large-size_1-of-4 slds-m-bottom_small" style="min-width: 160px;">
+                    <lightning-input
+                        type="date"
+                        label="Start - data"
+                        value={startDateStr}
+                        onchange={handleStartDateChange}
+                        required>
+                    </lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-2 slds-large-size_1-of-4 slds-m-bottom_small" style="min-width: 160px;">
+                    <lightning-input
+                        type="time"
+                        label="Start - godzina"
+                        value={startTimeStr}
+                        onchange={handleStartTimeChange}
+                        required>
+                    </lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-2 slds-large-size_1-of-4 slds-m-bottom_small" style="min-width: 160px;">
+                    <lightning-input
+                        type="time"
+                        label="Koniec - godzina"
+                        value={endTimeStr}
+                        onchange={handleEndTimeChange}
+                        required>
+                    </lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-2 slds-large-size_1-of-4 slds-m-bottom_small" style="min-width: 160px;">
+                    <lightning-input
+                        type="number"
+                        label="Czas trwania (min)"
+                        value={durationMinutes}
+                        min="1"
+                        onchange={handleDurationChange}
+                        required>
+                    </lightning-input>
+                </div>
             </div>
-            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
-                <lightning-input-field field-name="End_Date__c" required></lightning-input-field>
-            </div>
+        </div>
 
-            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+        <div class="slds-grid slds-wrap slds-gutters">
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
                 <lightning-input-field field-name="Format__c" required></lightning-input-field>
             </div>
-            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
                 <lightning-combobox
                     label="Location"
                     value={selectedLocation}
@@ -34,7 +68,7 @@
                 </lightning-combobox>
             </div>
 
-            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
                 <template if:true={selectedLocation}>
                     <lightning-combobox
                         label="Room"
@@ -54,23 +88,23 @@
                     <lightning-combobox
                         label="Room"
                         options={emptyOptions}
-                        placeholder="-- Najpierw wybierz lokalizację --"
+                        placeholder="Najpierw wybierz lokalizację"
                         disabled>
                     </lightning-combobox>
                 </template>
             </div>
-
-            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
                 <lightning-input-field field-name="Max_Participants__c" required></lightning-input-field>
             </div>
-            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
                 <lightning-input-field field-name="Price__c" required></lightning-input-field>
             </div>
-
-            <div class="slds-col slds-size_1-of-1">
+            <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2 slds-m-bottom_small">
                 <lightning-input-field field-name="Trainer__c"></lightning-input-field>
             </div>
-            <div class="slds-col slds-size_1-of-1">
+
+            <div class="slds-col slds-size_1-of-1 slds-m-bottom_small">
                 <lightning-input-field field-name="Description__c"></lightning-input-field>
             </div>
         </div>
@@ -96,9 +130,53 @@
             </div>
         </template>
 
+        <div class="slds-col slds-size_1-of-1 slds-m-top_medium slds-p-top_small slds-border_top">
+            <lightning-input
+                type="checkbox"
+                label="Szkolenie cykliczne (powtarzające się terminy tego samego kursu)"
+                checked={isRecurring}
+                onchange={handleRecurringToggle}>
+            </lightning-input>
+        </div>
+
+        <template if:true={isRecurring}>
+            <div class="slds-grid slds-wrap slds-gutters slds-m-top_small">
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small">
+                    <lightning-input
+                        type="number"
+                        label="Powtarzaj co"
+                        value={recurrenceInterval}
+                        min="1"
+                        onchange={handleRecurrenceIntervalChange}>
+                    </lightning-input>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small">
+                    <lightning-combobox
+                        label="Jednostka"
+                        value={recurrenceUnit}
+                        options={recurrenceUnitOptions}
+                        onchange={handleRecurrenceUnitChange}>
+                    </lightning-combobox>
+                </div>
+                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-3 slds-m-bottom_small">
+                    <lightning-input
+                        type="number"
+                        label="Liczba terminów (łącznie)"
+                        value={recurrenceCount}
+                        min="2"
+                        max="52"
+                        onchange={handleRecurrenceCountChange}>
+                    </lightning-input>
+                </div>
+            </div>
+            <p class="slds-text-color_weak slds-m-top_x-small" style="font-size: 13px;">
+                {recurrenceSummary}
+            </p>
+        </template>
+
         <div class="slds-m-top_medium slds-text-align_right slds-border_top slds-p-top_small">
-            <lightning-button label="Anuluj" onclick={handleCancel} class="slds-m-right_small"></lightning-button>
-            <lightning-button variant="brand" type="submit" label="Zapisz szkolenie"></lightning-button>
+            <lightning-button label="Anuluj" onclick={handleCancel} class="slds-m-right_small" disabled={isSaving}></lightning-button>
+            <lightning-button variant="brand" type="submit" label={saveButtonLabel} disabled={isSaving}></lightning-button>
         </div>
     </lightning-record-edit-form>
 </template>

@@ -2,30 +2,32 @@ import { NavigationMixin } from 'lightning/navigation';
 import { LightningElement, track, wire } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import { refreshApex } from '@salesforce/apex';
-import { deleteRecord } from 'lightning/uiRecordApi';
+import deleteTraining from '@salesforce/apex/TrainingFormController.deleteTraining';
 import getMyTrainings from '@salesforce/apex/CoordinatorDashboardController.getMyTrainings';
 import getPendingEnrollments from '@salesforce/apex/CoordinatorDashboardController.getPendingEnrollments';
-import getTrainingsEndingSoon from '@salesforce/apex/CoordinatorDashboardController.getTrainingsEndingSoon';
 import getCertificatesIssuedThisMonth from '@salesforce/apex/CoordinatorDashboardController.getCertificatesIssuedThisMonth';
 import getTrainingParticipants from '@salesforce/apex/CoordinatorDashboardController.getTrainingParticipants';
 import generateCertificates from '@salesforce/apex/CoordinatorDashboardController.generateCertificates';
 import updateEnrollmentStatus from '@salesforce/apex/CoordinatorDashboardController.updateEnrollmentStatus';
 import getEnrollmentsPerMonth from '@salesforce/apex/CoordinatorDashboardController.getEnrollmentsPerMonth';
 import getTrainingFormats from '@salesforce/apex/CoordinatorDashboardController.getTrainingFormats';
+import getTrainingsEndingSoon from '@salesforce/apex/CoordinatorDashboardController.getTrainingsEndingSoon';
+
 const ENROLLMENT_ACTIONS = [
     { label: 'Zatwierdź', name: 'accept', iconName: 'utility:check' },
     { label: 'Odrzuć', name: 'reject', iconName: 'utility:close' },
     { label: 'Przenieś z listy i zapisz', name: 'move_from_waitlist', iconName: 'utility:add' }
 ];
 
-export default class CoordinatorDashboard extends NavigationMixin(LightningElement) {    @track activeTrainings = [];
+export default class CoordinatorDashboard extends NavigationMixin(LightningElement) {
+
+    @track activeTrainings = [];
     @track plannedTrainings = [];
     @track completedTrainings = [];
-    
+
     @track pendingEnrollments = [];
-    @track trainingsEndingSoon = [];
     @track certificatesCount = 0;
-    
+
     @track isCertPreviewOpen = false;
     @track certPreviewUrl = '';
     @track certPreviewTitle = '';
@@ -33,28 +35,29 @@ export default class CoordinatorDashboard extends NavigationMixin(LightningEleme
     // Zmienne dla Modali
     @track isTrainingModalOpen = false;
     @track isParticipantsModalOpen = false;
-    monthlyData = [];          // Ta linijka naprawi błąd ze zdjęcia!
-    endingSoonTrainings = [];  // To zapobiegnie kolejnemu błędowi
-    formatLegend = [];         // To też
-    hasEndingSoon = false;
-    pieChartStyle = '';
-    // Zmienne dla Listy Uczestników
-    @track participantsList = [];
-    @track selectedParticipants = [];
+
+    @track endingSoonTrainings = [];
+    @track hasEndingSoon = false;
+    @track monthlyData = [];
+    @track formatLegend = [];
+    pieChartStyle = 'width: 160px; height: 160px; border-radius: 50%; background: #e5e7eb; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+
+    // Zmienne dla Listy Uczestników (modal "Zarządzaj uczestnikami")
+    @track allParticipants = [];      // wszyscy uczestnicy danego szkolenia
+    @track selectedParticipants = []; // zaznaczeni do wystawienia certyfikatu (tylko z zakładki "Do ukończenia")
+    @track participantsActiveTab = 'pending'; // 'pending' | 'completed'
     selectedTrainingId = null;
 
-    wiredTrainingsResult;
     wiredEnrollmentsResult;
-    wiredEndingSoonResult;
     wiredCertificatesResult;
 
     enrollmentColumns = [
-    { label: 'Status',      fieldName: 'Status__c',          type: 'text', initialWidth: 160 },
-    { label: 'Uczestnik',   fieldName: 'ParticipantName',     type: 'text' },
-    { label: 'Szkolenie',   fieldName: 'TrainingName',        type: 'text' },
-    { label: 'Data zapisu', fieldName: 'EnrollmentDate', type: 'date', initialWidth: 130 },
-    { label: 'Certyfikat',  fieldName: 'FileTitle',           type: 'text', initialWidth: 180 },
-    { type: 'action', typeAttributes: { rowActions: this._getRowActions.bind(this) } }
+        { label: 'Status',      fieldName: 'Status__c',          type: 'text', initialWidth: 160 },
+        { label: 'Uczestnik',   fieldName: 'ParticipantName',     type: 'text' },
+        { label: 'Szkolenie',   fieldName: 'TrainingName',        type: 'text' },
+        { label: 'Data zapisu', fieldName: 'EnrollmentDate', type: 'date', initialWidth: 130 },
+        { label: 'Certyfikat',  fieldName: 'FileTitle',           type: 'text', initialWidth: 180 },
+        { type: 'action', typeAttributes: { rowActions: this._getRowActions.bind(this) } }
     ];
 
     _getRowActions(row, doneCallback) {
@@ -63,13 +66,22 @@ export default class CoordinatorDashboard extends NavigationMixin(LightningEleme
             actions.unshift({ label: 'Zobacz certyfikat', name: 'view_certificate', iconName: 'utility:attach' });
         }
         doneCallback(actions);
-    }       
+    }
 
     participantsColumns = [
         { label: 'Uczestnik', fieldName: 'ParticipantName', type: 'text' },
         { label: 'Status', fieldName: 'Status__c', type: 'text' },
         { label: 'Data zapisu', fieldName: 'Enrollment_Date__c', type: 'date' }
     ];
+
+    completedParticipantsColumns = [
+        { label: 'Uczestnik', fieldName: 'ParticipantName', type: 'text' },
+        { label: 'Data zapisu', fieldName: 'Enrollment_Date__c', type: 'date' }
+    ];
+
+    connectedCallback() {
+        this.loadTrainings();
+    }
 
     get selectedParticipantsCount() {
         return this.selectedParticipants.length;
@@ -79,29 +91,85 @@ export default class CoordinatorDashboard extends NavigationMixin(LightningEleme
         return this.selectedParticipants.length === 0;
     }
 
-    @wire(getMyTrainings)
-    wiredTrainings(result) {
-        this.wiredTrainingsResult = result;
-        if (result.data) {
-            let active = [], planned = [], completed = [];
-            
-            result.data.forEach(t => {
-                let trainingRecord = { ...t };
-                const total = t.Max_Participants__c || 1;
-                const current = t.Enrolled_Count__c || 0;
-                const percent = Math.round((current / total) * 100);
-                trainingRecord.occupancyPercentage = percent;
-                trainingRecord.barVariant = percent >= 90 ? 'expired' : (percent >= 75 ? 'warning' : 'base');
+    // Uczestnicy oczekujący na certyfikat (jeszcze nie "Completed")
+    get pendingParticipants() {
+        return this.allParticipants.filter(p => p.Status__c !== 'Completed');
+    }
 
-                if (t.Status__c === 'Active') active.push(trainingRecord);
-                else if (t.Status__c === 'Planed') planned.push(trainingRecord);
-                else if (t.Status__c === 'Ended') completed.push(trainingRecord);
+    // Uczestnicy, którzy już ukończyli szkolenie / mają certyfikat
+    get completedParticipants() {
+        return this.allParticipants.filter(p => p.Status__c === 'Completed');
+    }
+
+    get hasCompletedParticipants() {
+        return this.completedParticipants.length > 0;
+    }
+
+    get isPendingTabActive() {
+        return this.participantsActiveTab === 'pending';
+    }
+
+    get isCompletedTabActive() {
+        return this.participantsActiveTab === 'completed';
+    }
+
+    get pendingTabClass() {
+        return this.isPendingTabActive ? 'tms-subtab tms-subtab--active' : 'tms-subtab';
+    }
+
+    get completedTabClass() {
+        return this.isCompletedTabActive ? 'tms-subtab tms-subtab--active' : 'tms-subtab';
+    }
+
+    showPendingTab() {
+        this.participantsActiveTab = 'pending';
+    }
+
+    showCompletedTab() {
+        this.participantsActiveTab = 'completed';
+    }
+
+    // getMyTrainings NIE jest cacheable (wykonuje DML, żeby przeliczyć status na podstawie dat),
+    // więc nie może być użyte przez @wire (wire wymaga cacheable=true) - wywołujemy ją imperatywnie.
+    loadTrainings() {
+        getMyTrainings()
+            .then(data => {
+                let active = [], planned = [], completed = [];
+
+                data.forEach(t => {
+                    let trainingRecord = { ...t };
+                    const total = t.Max_Participants__c || 1;
+                    const current = t.Enrolled_Count__c || 0;
+                    const percent = Math.round((current / total) * 100);
+                    trainingRecord.occupancyPercentage = percent;
+                    trainingRecord.barVariant = percent >= 90 ? 'expired' : (percent >= 75 ? 'warning' : 'base');
+
+                    const sessions = (t.Training_Sessions__r || []).map(s => ({ ...s }));
+                    trainingRecord.sessionsCount = sessions.length;
+                    trainingRecord.hasMultipleSessions = sessions.length > 1;
+                    trainingRecord.sessionsLabel = sessions.length > 1
+                        ? `${sessions.length} terminów`
+                        : (sessions.length === 1 ? '1 termin' : '');
+
+                    if (t.Status__c === 'Active') active.push(trainingRecord);
+                    else if (t.Status__c === 'Planed') planned.push(trainingRecord);
+                    else if (t.Status__c === 'Ended') completed.push(trainingRecord);
+                });
+
+                this.activeTrainings = active;
+                this.plannedTrainings = planned;
+                this.completedTrainings = completed;
+            })
+            .catch(error => {
+                this.activeTrainings = [];
+                this.plannedTrainings = [];
+                this.completedTrainings = [];
+                this.showToast(
+                    'Błąd wczytywania szkoleń',
+                    error.body ? error.body.message : 'Nie udało się pobrać listy szkoleń.',
+                    'error'
+                );
             });
-
-            this.activeTrainings = active;
-            this.plannedTrainings = planned;
-            this.completedTrainings = completed;
-        }
     }
 
     @wire(getPendingEnrollments)
@@ -112,35 +180,21 @@ export default class CoordinatorDashboard extends NavigationMixin(LightningEleme
         }
     }
 
+    // Alerty: szkolenia kończące się w ciągu 7 dni
     @wire(getTrainingsEndingSoon)
-    wiredEndingSoon(result) {
-        this.wiredEndingSoonResult = result;
-        if (result.data) {
-            this.trainingsEndingSoon = result.data;
-        }
-    }
-// --- ZMIENNE DO STATYSTYK I ALERTÓW ---
-    endingSoonTrainings = [];
-    hasEndingSoon = false;
-    monthlyData = [];
-    pieChartStyle = 'width: 160px; height: 160px; border-radius: 50%; background: #e5e7eb; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
-    formatLegend = [];
-
-    // 1. Pobieranie alertów (Szkolenia kończące się za < 7 dni)
-    @wire(getTrainingsEndingSoon)
-    wiredEndingSoon({ data, error }) {
+    wiredEndingSoon({ data }) {
         if (data) {
             this.endingSoonTrainings = data;
             this.hasEndingSoon = data.length > 0;
         }
     }
 
-    // 2. Pobieranie danych do Wykresu Słupkowego
+    // Dane do wykresu słupkowego (zapisy per miesiąc)
     @wire(getEnrollmentsPerMonth)
-    wiredMonthly({ data, error }) {
+    wiredMonthly({ data }) {
         if (data && data.length > 0) {
             let maxVal = Math.max(...data.map(d => d.value));
-            maxVal = maxVal === 0 ? 1 : maxVal; // Zabezpieczenie przed dzieleniem przez zero
+            maxVal = maxVal === 0 ? 1 : maxVal;
 
             this.monthlyData = data.map(d => ({
                 month: d.month,
@@ -151,16 +205,16 @@ export default class CoordinatorDashboard extends NavigationMixin(LightningEleme
         }
     }
 
-    // 3. Pobieranie danych do Wykresu Kołowego (generowanie CSS Conic Gradient)
+    // Dane do wykresu kołowego formatów szkoleń (CSS conic-gradient)
     @wire(getTrainingFormats)
-    wiredFormats({ data, error }) {
+    wiredFormats({ data }) {
         if (data && data.length > 0) {
             let total = data.reduce((sum, d) => sum + d.value, 0);
             if (total === 0) return;
 
             let gradientParts = [];
             let currentPercentage = 0;
-            this.formatLegend = [];
+            const legend = [];
 
             data.forEach(d => {
                 let percent = (d.value / total) * 100;
@@ -169,16 +223,18 @@ export default class CoordinatorDashboard extends NavigationMixin(LightningEleme
                 gradientParts.push(`${d.color} ${currentPercentage}% ${nextPercentage}%`);
                 currentPercentage = nextPercentage;
 
-                this.formatLegend.push({
+                legend.push({
                     label: d.label,
                     value: d.value,
                     colorStyle: `background-color: ${d.color}; width: 14px; height: 14px; display: inline-block; margin-right: 8px; border-radius: 3px;`
                 });
             });
 
+            this.formatLegend = legend;
             this.pieChartStyle = `width: 160px; height: 160px; border-radius: 50%; box-shadow: 0 4px 6px rgba(0,0,0,0.1); background: conic-gradient(${gradientParts.join(', ')});`;
         }
     }
+
     @wire(getCertificatesIssuedThisMonth)
     wiredCertificates(result) {
         this.wiredCertificatesResult = result;
@@ -210,7 +266,7 @@ export default class CoordinatorDashboard extends NavigationMixin(LightningEleme
                 this.showToast('Sukces', `Status zmieniony na: ${newStatus}`, 'success');
                 return refreshApex(this.wiredEnrollmentsResult);
             })
-            .then(() => refreshApex(this.wiredTrainingsResult))
+            .then(() => this.loadTrainings())
             .catch(error => this.showToast('Błąd', error.body ? error.body.message : error.message, 'error'));
     }
 
@@ -229,52 +285,41 @@ export default class CoordinatorDashboard extends NavigationMixin(LightningEleme
 
     openParticipantsModal(event) {
         this.selectedTrainingId = event.target.dataset.id;
+        this.participantsActiveTab = 'pending';
         getTrainingParticipants({ trainingId: this.selectedTrainingId })
             .then(result => {
-                this.participantsList = result.map(enr => ({
+                this.allParticipants = result.map(enr => ({
                     ...enr,
                     ParticipantName: enr.Participant__r ? enr.Participant__r.Name : ''
                 }));
-                this.selectedParticipants = []; 
+                this.selectedParticipants = [];
                 this.isParticipantsModalOpen = true;
             })
-            .catch(error => this.showToast('Błąd', 'Nie udało się pobrać uczestników.', 'error'));
+            .catch(() => this.showToast('Błąd', 'Nie udało się pobrać uczestników.', 'error'));
     }
 
     closeParticipantsModal() {
         this.isParticipantsModalOpen = false;
         this.selectedTrainingId = null;
+        this.allParticipants = [];
+        this.selectedParticipants = [];
     }
 
-handleParticipantSelection(event) {
-        const selectedRows = event.detail.selectedRows;
-        
-        const hasAlreadyCompleted = selectedRows.some(row => row.Status__c === 'Completed');
-        
-        this.selectedParticipantsCount = selectedRows.length;
-        this.selectedEnrollmentIds = selectedRows.map(row => row.Id);
-
-        this.isCertBtnDisabled = selectedRows.length === 0 || hasAlreadyCompleted;
-        if (hasAlreadyCompleted) {
-            this.dispatchEvent(new ShowToastEvent({
-                title: 'Uwaga',
-                message: 'Zaznaczono osobę, która otrzymała już certyfikat (Completed). Odznacz ją, aby móc wygenerować pozostałe.',
-                variant: 'warning'
-            }));
-        }
+    handleParticipantSelection(event) {
+        this.selectedParticipants = event.detail.selectedRows;
     }
 
     handleGenerateCertificates() {
         const enrollmentIds = this.selectedParticipants.map(row => row.Id);
-        
-        generateCertificates({ enrollmentIds: enrollmentIds })
+
+        generateCertificates({ enrollmentIds })
             .then(() => {
-                this.showToast('Sukces', 'Certyfikaty zostały wygenerowane!', 'success');
+                this.showToast('Sukces', 'Certyfikaty zostały wygenerowane, a status uczestników zmieniony na "Ukończono"!', 'success');
                 this.closeParticipantsModal();
-                refreshApex(this.wiredTrainingsResult);
+                this.loadTrainings();
                 refreshApex(this.wiredCertificatesResult);
             })
-            .catch(error => this.showToast('Błąd', 'Błąd generowania certyfikatów.', 'error'));
+            .catch(error => this.showToast('Błąd', error.body ? error.body.message : 'Błąd generowania certyfikatów.', 'error'));
     }
 
     handleOverlayClick(event) {
@@ -286,15 +331,17 @@ handleParticipantSelection(event) {
     handleTrainingCreateSuccess() {
         this.showToast('Sukces', 'Szkolenie zostało utworzone!', 'success');
         this.closeTrainingModal();
-        refreshApex(this.wiredTrainingsResult);
+        this.loadTrainings();
     }
 
     showToast(title, message, variant) {
         this.dispatchEvent(new ShowToastEvent({ title, message, variant }));
     }
+
     stopPropagation(event) {
         event.stopPropagation();
     }
+
     handleEditTraining(event) {
         const recordId = event.target.dataset.id;
         this[NavigationMixin.Navigate]({
@@ -310,14 +357,13 @@ handleParticipantSelection(event) {
     handleDeleteTraining(event) {
         const recordId = event.target.dataset.id;
         if (confirm('Czy na pewno chcesz trwale usunąć to szkolenie?')) {
-            deleteRecord(recordId)
+            deleteTraining({ trainingId: recordId })
                 .then(() => {
-                    this.dispatchEvent(new ShowToastEvent({ title: 'Sukces', message: 'Szkolenie usunięte', variant: 'success' }));
-
-                    return refreshApex(this.wiredActiveTrainings); 
+                    this.showToast('Sukces', 'Szkolenie usunięte', 'success');
+                    this.loadTrainings();
                 })
                 .catch(error => {
-                    this.dispatchEvent(new ShowToastEvent({ title: 'Błąd usunięcia', message: error.body.message, variant: 'error' }));
+                    this.showToast('Błąd usunięcia', error.body ? error.body.message : error.message, 'error');
                 });
         }
     }

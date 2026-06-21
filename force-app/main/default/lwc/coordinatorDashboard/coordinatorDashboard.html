@@ -13,7 +13,7 @@
                     <p class="tms-subtitle">Moje szkolenia, zapisy i certyfikaty</p>
                 </div>
             </div>
-            <div>
+            <div style="display: flex; gap: 10px; align-items: center;">
                 <button class="tms-btn" onclick={openTrainingModal}>+ Nowe szkolenie</button>
             </div>
         </div>
@@ -32,6 +32,9 @@
                                                 <div class="training-box-header">
                                                     <strong>{training.Name}</strong>
                                                     <span class="tms-badge">{training.Format__c}</span>
+                                                    <template if:true={training.hasMultipleSessions}>
+                                                        <span class="tms-badge" style="background:#e0e7ff; color:#3730a3;">{training.sessionsLabel}</span>
+                                                    </template>
                                                 </div>
                                                 <div class="training-box-stats">
                                                     <span>Miejsca: {training.Enrolled_Count__c} / {training.Max_Participants__c}</span>
@@ -59,10 +62,18 @@
                                                 <div class="training-box-header">
                                                     <strong>{training.Name}</strong>
                                                     <span class="tms-badge" style="background:#fef3c7; color:#92400e;">{training.Format__c}</span>
+                                                    <template if:true={training.hasMultipleSessions}>
+                                                        <span class="tms-badge" style="background:#e0e7ff; color:#3730a3;">{training.sessionsLabel}</span>
+                                                    </template>
                                                 </div>
                                                 <p style="font-size: 13px; color: #6b7280; margin-top:8px;">
                                                     Start: <lightning-formatted-date-time value={training.Start_Date__c} year="numeric" month="short" day="2-digit"></lightning-formatted-date-time>
                                                 </p>
+                                                <div style="display: flex; gap: 8px; margin-top: 12px;">
+                                                    <button class="tms-btn-small" style="background-color: #043669; color: white; border: 1px solid #043669;" data-id={training.Id} onclick={openParticipantsModal}>Zarządzaj Uczestnikami</button>
+                                                    <button class="tms-btn-small" style="background-color: white; color: #043669; border: 1px solid #043669;" data-id={training.Id} onclick={handleEditTraining}>Edytuj</button>
+                                                    <button class="tms-btn-small" style="background-color: white; color: #dc2626; border: 1px solid #dc2626;" data-id={training.Id} onclick={handleDeleteTraining}>Usuń</button>
+                                                </div>
                                             </div>
                                         </div>
                                     </template>
@@ -81,9 +92,8 @@
                                                     <strong>{training.Name}</strong>
                                                 </div>
                                                 <p style="font-size: 13px; color: #6b7280; margin-top:8px; margin-bottom: 12px;">Zakończone: <lightning-formatted-date-time value={training.End_Date__c} year="numeric" month="short" day="2-digit"></lightning-formatted-date-time></p>
-<template if:true={isTrainingCompleted}>
-    <button class="tms-btn-small" data-id={training.Id} onclick={openParticipantsModal}>Wystaw Certyfikaty</button>
-</template>                                            </div>
+                                                <button class="tms-btn-small" style="background-color: #043669; color: white; border: 1px solid #043669;" data-id={training.Id} onclick={openParticipantsModal}>Zarządzaj Uczestnikami</button>
+                                            </div>
                                         </div>
                                     </template>
                                 </template>
@@ -161,27 +171,32 @@
                             </div>
                         </lightning-tab>
 
-                    </lightning-tabset>
-                </div>
+                        <lightning-tab label="Kalendarz">
+                            <div class="slds-p-around_medium">
+                                <c-coordinator-calendar></c-coordinator-calendar>
+                            </div>
+                        </lightning-tab>
 
-                <div class="tms-card">
-                    <div class="tms-card-header">
-                        Zarządzanie zapytaniami i zapisami
-                    </div>
-                    <div class="table-container">
-                        <template if:true={pendingEnrollments.length}>
-                            <lightning-datatable
-                                key-field="Id"
-                                data={pendingEnrollments}
-                                columns={enrollmentColumns}
-                                hide-checkbox-column
-                                onrowaction={handleRowAction}>
-                            </lightning-datatable>
-                        </template>
-                        <template if:false={pendingEnrollments.length}>
-                            <p class="empty-msg" style="padding: 2rem;">Brak oczekujących zgłoszeń.</p>
-                        </template>
-                    </div>
+                        <lightning-tab label="Zapisy">
+                            <div class="slds-p-around_medium">
+                                <div class="table-container">
+                                    <template if:true={pendingEnrollments.length}>
+                                        <lightning-datatable
+                                            key-field="Id"
+                                            data={pendingEnrollments}
+                                            columns={enrollmentColumns}
+                                            hide-checkbox-column
+                                            onrowaction={handleRowAction}>
+                                        </lightning-datatable>
+                                    </template>
+                                    <template if:false={pendingEnrollments.length}>
+                                        <p class="empty-msg" style="padding: 2rem;">Brak oczekujących zgłoszeń.</p>
+                                    </template>
+                                </div>
+                            </div>
+                        </lightning-tab>
+
+                    </lightning-tabset>
                 </div>
             </div>
 
@@ -202,14 +217,39 @@
                     </div>
                     <div class="ef-modal-body">
                         <p class="slds-m-bottom_medium text-color-gray">Zaznacz uczestników, którzy byli obecni, aby wystawić im certyfikaty.</p>
-                        <div style="height: 300px;">
-                            <lightning-datatable
-                                key-field="Id"
-                                data={participantsList}
-                                columns={participantsColumns}
-                                onrowselection={handleParticipantSelection}>
-                            </lightning-datatable>
+
+                        <div class="tms-subtabs">
+                            <button class={pendingTabClass} onclick={showPendingTab}>Do ukończenia ({pendingParticipants.length})</button>
+                            <button class={completedTabClass} onclick={showCompletedTab}>Ukończeni ({completedParticipants.length})</button>
                         </div>
+
+                        <template if:true={isPendingTabActive}>
+                            <div style="height: 300px;">
+                                <lightning-datatable
+                                    key-field="Id"
+                                    data={pendingParticipants}
+                                    columns={participantsColumns}
+                                    onrowselection={handleParticipantSelection}>
+                                </lightning-datatable>
+                            </div>
+                        </template>
+
+                        <template if:true={isCompletedTabActive}>
+                            <div style="height: 300px;">
+                                <template if:true={hasCompletedParticipants}>
+                                    <lightning-datatable
+                                        key-field="Id"
+                                        data={completedParticipants}
+                                        columns={completedParticipantsColumns}
+                                        hide-checkbox-column>
+                                    </lightning-datatable>
+                                </template>
+                                <template if:false={hasCompletedParticipants}>
+                                    <p class="empty-msg">Nikt jeszcze nie ukończył tego szkolenia.</p>
+                                </template>
+                            </div>
+                        </template>
+
                         <div class="ef-actions slds-m-top_medium">
                             <button class="ef-btn ef-btn--secondary" onclick={closeParticipantsModal}>Anuluj</button>
                             <button class="ef-btn ef-btn--primary" onclick={handleGenerateCertificates} disabled={isCertBtnDisabled}>

@@ -1,8 +1,13 @@
 public with sharing class CoordinatorDashboardController {
     
-    @AuraEnabled(cacheable=true)
+    @AuraEnabled
     public static List<Training__c> getMyTrainings() {
-        return [SELECT Id, Name, Format__c, Max_Participants__c, Enrolled_Count__c, Start_Date__c, End_Date__c, Status__c 
+        // Przeliczamy status (Planed/Active/Ended) na podstawie bieżącej daty,
+        // zanim zwrócimy dane do dashboardu - dzięki temu zakładki zawsze pokazują aktualny stan.
+        TrainingStatusUpdater.updateStatusesForOwner(UserInfo.getUserId());
+
+        return [SELECT Id, Name, Format__c, Max_Participants__c, Enrolled_Count__c, Start_Date__c, End_Date__c, Status__c,
+                       (SELECT Id, Start_Time__c, Duration_Minutes__c FROM Training_Sessions__r ORDER BY Start_Time__c ASC)
                 FROM Training__c 
                 WHERE OwnerId = :UserInfo.getUserId() 
                 WITH SECURITY_ENFORCED 
@@ -97,14 +102,6 @@ public with sharing class CoordinatorDashboardController {
         List<Enrollment__c> enrollmentsToUpdate = new List<Enrollment__c>();
         List<Certificate__c> certificatesToInsert = new List<Certificate__c>();
 
-        List<Enrollment__c> enrollments = [SELECT Id, Training__r.Status__c FROM Enrollment__c WHERE Id IN :enrollmentIds];
-        
-        for (Enrollment__c enr : enrollments) {
-            if (enr.Training__r.Status__c != 'Completed') {
-                throw new AuraHandledException('Nie można wystawić certyfikatu dla szkolenia, które nie jest jeszcze ukończone.');
-            }
-        }
-
         for (Id enrId : enrollmentIds) {
             enrollmentsToUpdate.add(new Enrollment__c(Id = enrId, Status__c = 'Completed'));
             Certificate__c cert = new Certificate__c();
@@ -159,7 +156,7 @@ public with sharing class CoordinatorDashboardController {
         List<AggregateResult> aggResults = [
             SELECT Format__c, COUNT(Id) recordCount
             FROM Training__c
-            WHERE Status__c IN ('Active', 'Planned') AND OwnerId = :currentUserId
+            WHERE Status__c IN ('Active', 'Planed') AND OwnerId = :currentUserId
             GROUP BY Format__c
         ];
 

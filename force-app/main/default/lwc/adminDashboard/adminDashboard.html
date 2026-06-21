@@ -1,0 +1,386 @@
+<template>
+    <div class="tms-dashboard">
+
+        <a class="slds-hide" data-id="csvDownloadLink"></a>
+
+        <div class="tms-header">
+            <div class="tms-header-left">
+                <div class="tms-header-icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2l8 4v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6l8-4z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="tms-title">Panel Administratora</h1>
+                    <p class="tms-subtitle">Cała organizacja: szkolenia, sale, trenerzy, statystyki</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="tms-card" style="padding: 0; overflow: hidden;">
+            <lightning-tabset variant="scoped">
+
+                <lightning-tab label="Przegląd">
+                    <div class="slds-p-around_medium">
+                        <div class="tms-stat-grid">
+                            <div class="tms-stat-card">
+                                <div class="tms-stat-card-value">{stats.totalTrainings}</div>
+                                <div class="tms-stat-card-label">Wszystkie szkolenia</div>
+                            </div>
+                            <div class="tms-stat-card tms-stat-card--active">
+                                <div class="tms-stat-card-value">{stats.activeTrainings}</div>
+                                <div class="tms-stat-card-label">Aktywne teraz</div>
+                            </div>
+                            <div class="tms-stat-card tms-stat-card--planned">
+                                <div class="tms-stat-card-value">{stats.plannedTrainings}</div>
+                                <div class="tms-stat-card-label">Planowane</div>
+                            </div>
+                            <div class="tms-stat-card tms-stat-card--ended">
+                                <div class="tms-stat-card-value">{stats.endedTrainings}</div>
+                                <div class="tms-stat-card-label">Zakończone</div>
+                            </div>
+                            <div class="tms-stat-card">
+                                <div class="tms-stat-card-value">{stats.totalEnrollments}</div>
+                                <div class="tms-stat-card-label">Łączne zapisy</div>
+                            </div>
+                            <div class="tms-stat-card">
+                                <div class="tms-stat-card-value">{stats.certificatesThisMonth}</div>
+                                <div class="tms-stat-card-label">Certyfikaty (ten miesiąc)</div>
+                            </div>
+                            <div class="tms-stat-card">
+                                <div class="tms-stat-card-value">{stats.totalRooms}</div>
+                                <div class="tms-stat-card-label">Sale</div>
+                            </div>
+                            <div class="tms-stat-card">
+                                <div class="tms-stat-card-value">{stats.totalTrainers}</div>
+                                <div class="tms-stat-card-label">Trenerzy</div>
+                            </div>
+                            <div class="tms-stat-card">
+                                <div class="tms-stat-card-value">{stats.totalCoordinators}</div>
+                                <div class="tms-stat-card-label">Aktywni koordynatorzy</div>
+                            </div>
+                        </div>
+
+                        <div class="slds-box slds-m-top_large">
+                            <strong style="color: #043669; font-size: 15px;">Top 5 koordynatorów (liczba szkoleń)</strong>
+                            <div class="slds-m-top_medium">
+                                <template for:each={topCoordinators} for:item="c">
+                                    <div key={c.name} class="tms-coord-row">
+                                        <span class="tms-coord-name">{c.name}</span>
+                                        <div class="tms-coord-bar-track">
+                                            <div class="tms-coord-bar" style={c.barStyle}></div>
+                                        </div>
+                                        <span class="tms-coord-count">{c.count}</span>
+                                    </div>
+                                </template>
+                                <template if:true={topCoordinators.length}></template>
+                            </div>
+                        </div>
+                    </div>
+                </lightning-tab>
+
+                <lightning-tab label="Wszystkie szkolenia">
+                    <div class="slds-p-around_medium">
+                        <div class="slds-grid slds-grid_align-spread slds-m-bottom_medium">
+                            <lightning-input
+                                type="search"
+                                label="Szukaj"
+                                placeholder="Szukaj po nazwie, koordynatorze, lokalizacji..."
+                                onchange={handleTrainingsSearch}
+                                class="slds-grow">
+                            </lightning-input>
+                        </div>
+                        <div class="slds-text-align_right slds-m-bottom_small">
+                            <button class="tms-btn-secondary" onclick={handleExportTrainingsCsv}>Eksportuj do CSV</button>
+                        </div>
+                        <div class="table-container">
+                            <lightning-datatable
+                                key-field="recordId"
+                                data={filteredTrainings}
+                                columns={trainingColumns}
+                                hide-checkbox-column>
+                            </lightning-datatable>
+                        </div>
+                    </div>
+                </lightning-tab>
+
+                <lightning-tab label="Sale">
+                    <div class="slds-p-around_medium">
+                        <div class="slds-m-bottom_medium slds-text-align_right">
+                            <button class="tms-btn" onclick={openRoomModal}>+ Nowa sala</button>
+                        </div>
+                        <div class="table-container">
+                            <lightning-datatable
+                                key-field="recordId"
+                                data={rooms}
+                                columns={roomColumns}
+                                hide-checkbox-column
+                                onrowaction={handleRoomRowAction}>
+                            </lightning-datatable>
+                        </div>
+                    </div>
+                </lightning-tab>
+
+                <lightning-tab label="Trenerzy">
+                    <div class="slds-p-around_medium">
+                        <div class="slds-m-bottom_medium slds-text-align_right">
+                            <button class="tms-btn" onclick={openTrainerModal}>+ Nowy trener</button>
+                        </div>
+                        <div class="table-container">
+                            <lightning-datatable
+                                key-field="recordId"
+                                data={trainers}
+                                columns={trainerColumns}
+                                hide-checkbox-column
+                                onrowaction={handleTrainerRowAction}>
+                            </lightning-datatable>
+                        </div>
+                    </div>
+                </lightning-tab>
+
+                <lightning-tab label="Analiza">
+                    <div class="slds-p-around_medium">
+                        <div class="slds-grid slds-gutters slds-wrap">
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                                <div class="slds-box" style="height: 320px; display: flex; flex-direction: column;">
+                                    <strong style="color: #043669; font-size: 15px; margin-bottom: 20px;">Zapisy per miesiąc (cała organizacja, bieżący rok)</strong>
+                                    <template if:true={monthlyData.length}>
+                                        <div style="flex-grow: 1; display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 2px solid #e5e7eb; padding-top: 20px;">
+                                            <template for:each={monthlyData} for:item="bar">
+                                                <div key={bar.month} style="flex: 1; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end;">
+                                                    <span style="font-size: 12px; color: #4b5563; font-weight: bold; margin-bottom: 4px;">{bar.displayValue}</span>
+                                                    <div style={bar.barStyle} title={bar.value}></div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                        <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+                                            <template for:each={monthlyData} for:item="bar">
+                                                <div key={bar.month} style="flex: 1; text-align: center; font-size: 12px; color: #6b7280;">{bar.month}</div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                    <template if:false={monthlyData.length}>
+                                        <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 14px;">Brak danych o zapisach w tym roku.</div>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <div class="slds-col slds-size_1-of-1 slds-large-size_1-of-2">
+                                <div class="slds-box" style="height: 320px; display: flex; flex-direction: column;">
+                                    <strong style="color: #043669; font-size: 15px; margin-bottom: 20px;">Format szkoleń (aktywne/planowane, cała organizacja)</strong>
+                                    <template if:true={formatLegend.length}>
+                                        <div style="display: flex; flex-grow: 1; align-items: center; justify-content: center; gap: 40px;">
+                                            <div style={pieChartStyle}></div>
+                                            <div>
+                                                <template for:each={formatLegend} for:item="leg">
+                                                    <div key={leg.label} style="display: flex; align-items: center; margin-bottom: 12px;">
+                                                        <div style={leg.colorStyle}></div>
+                                                        <span style="font-size: 14px; color: #374151;"><strong>{leg.label}</strong> ({leg.value})</span>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
+                                    </template>
+                                    <template if:false={formatLegend.length}>
+                                        <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 14px;">Brak aktywnych/planowanych szkoleń.</div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </lightning-tab>
+
+                <lightning-tab label="Użytkownicy">
+                    <div class="slds-p-around_medium">
+                        <div class="slds-text-align_right slds-m-bottom_small">
+                            <button class="tms-btn-secondary" onclick={handleExportUsersCsv}>Eksportuj do CSV</button>
+                        </div>
+                        <div class="table-container">
+                            <lightning-datatable
+                                key-field="recordId"
+                                data={systemUsers}
+                                columns={userColumns}
+                                hide-checkbox-column>
+                            </lightning-datatable>
+                        </div>
+                    </div>
+                </lightning-tab>
+
+                <lightning-tab label="Logowania">
+                    <div class="slds-p-around_medium">
+                        <p class="slds-text-color_weak slds-m-bottom_small" style="font-size: 13px;">
+                            Ostatnie 50 logowań w organizacji.
+                        </p>
+                        <div class="table-container">
+                            <lightning-datatable
+                                data={recentLogins}
+                                columns={loginColumns}
+                                hide-checkbox-column
+                                key-field="loginTime">
+                            </lightning-datatable>
+                        </div>
+                    </div>
+                </lightning-tab>
+
+                <lightning-tab label="Rekordy w systemie">
+                    <div class="slds-p-around_medium">
+                        <div class="tms-stat-grid">
+                            <div class="tms-stat-card">
+                                <div class="tms-stat-card-value">{recordCounts.Training__c}</div>
+                                <div class="tms-stat-card-label">Training__c</div>
+                            </div>
+                            <div class="tms-stat-card">
+                                <div class="tms-stat-card-value">{recordCounts.Enrollment__c}</div>
+                                <div class="tms-stat-card-label">Enrollment__c</div>
+                            </div>
+                            <div class="tms-stat-card">
+                                <div class="tms-stat-card-value">{recordCounts.Certificate__c}</div>
+                                <div class="tms-stat-card-label">Certificate__c</div>
+                            </div>
+                            <div class="tms-stat-card">
+                                <div class="tms-stat-card-value">{recordCounts.Trainer__c}</div>
+                                <div class="tms-stat-card-label">Trainer__c</div>
+                            </div>
+                            <div class="tms-stat-card">
+                                <div class="tms-stat-card-value">{recordCounts.Room__c}</div>
+                                <div class="tms-stat-card-label">Room__c</div>
+                            </div>
+                            <div class="tms-stat-card">
+                                <div class="tms-stat-card-value">{recordCounts.Training_Session__c}</div>
+                                <div class="tms-stat-card-label">Training_Session__c</div>
+                            </div>
+                        </div>
+                    </div>
+                </lightning-tab>
+
+                <lightning-tab label="Błędy Apex">
+                    <div class="slds-p-around_medium">
+                        <p class="slds-text-color_weak slds-m-bottom_small" style="font-size: 13px;">
+                            Nieudane zadania w tle (batch / queueable / scheduled).
+                        </p>
+                        <template if:true={hasFailedJobs}>
+                            <div class="table-container">
+                                <lightning-datatable
+                                    data={failedJobs}
+                                    columns={failedJobColumns}
+                                    hide-checkbox-column
+                                    key-field="completedDate">
+                                </lightning-datatable>
+                            </div>
+                        </template>
+                        <template if:false={hasFailedJobs}>
+                            <p class="empty-msg" style="padding: 1.5rem; color:#059669;">
+                                Brak nieudanych zadan Apex. Wszystko dziala poprawnie.
+                            </p>
+                        </template>
+                    </div>
+                </lightning-tab>
+
+                <lightning-tab label="Przychód">
+                    <div class="slds-p-around_medium">
+                        <div class="slds-box" style="height: 320px; display: flex; flex-direction: column;">
+                            <strong style="color: #043669; font-size: 15px; margin-bottom: 20px;">Przychód z zapisów na szkolenia per miesiąc (bieżący rok)</strong>
+                            <div style="flex-grow: 1; display: flex; align-items: flex-end; justify-content: space-between; border-bottom: 2px solid #e5e7eb; padding-top: 20px;">
+                                <template for:each={revenueData} for:item="bar">
+                                    <div key={bar.month} style="flex: 1; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end;">
+                                        <span style="font-size: 11px; color: #4b5563; font-weight: bold; margin-bottom: 4px;">{bar.displayValue}</span>
+                                        <div style={bar.barStyle} title={bar.value}></div>
+                                    </div>
+                                </template>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-top: 8px;">
+                                <template for:each={revenueData} for:item="bar">
+                                    <div key={bar.month} style="flex: 1; text-align: center; font-size: 12px; color: #6b7280;">{bar.month}</div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </lightning-tab>
+
+            </lightning-tabset>
+        </div>
+
+        <template if:true={isRoomModalOpen}>
+            <div class="ef-overlay" onclick={closeRoomModal}>
+                <div class="ef-modal" onclick={stopPropagation}>
+                    <div class="ef-modal-header">
+                        <h2 class="ef-title">Dodaj nową salę</h2>
+                        <button class="ef-close" onclick={closeRoomModal}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="ef-modal-body">
+                        <lightning-record-edit-form object-api-name="Room__c" onsuccess={handleRoomSuccess}>
+                            <lightning-messages></lightning-messages>
+                            <div class="slds-grid slds-wrap slds-gutters">
+                                <div class="slds-col slds-size_1-of-1">
+                                    <lightning-input-field field-name="Name" required></lightning-input-field>
+                                </div>
+                                <div class="slds-col slds-size_1-of-1">
+                                    <lightning-input-field field-name="Location__c" required></lightning-input-field>
+                                </div>
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                    <lightning-input-field field-name="Max_Capacity__c" required></lightning-input-field>
+                                </div>
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                    <lightning-input-field field-name="Has_computers__c"></lightning-input-field>
+                                </div>
+                            </div>
+                            <div class="ef-actions slds-m-top_medium">
+                                <button class="ef-btn ef-btn--secondary" onclick={closeRoomModal}>Anuluj</button>
+                                <lightning-button variant="brand" type="submit" label="Zapisz salę"></lightning-button>
+                            </div>
+                        </lightning-record-edit-form>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+        <template if:true={isTrainerModalOpen}>
+            <div class="ef-overlay" onclick={closeTrainerModal}>
+                <div class="ef-modal" onclick={stopPropagation}>
+                    <div class="ef-modal-header">
+                        <h2 class="ef-title">Dodaj nowego trenera</h2>
+                        <button class="ef-close" onclick={closeTrainerModal}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="ef-modal-body">
+                        <lightning-record-edit-form object-api-name="Trainer__c" onsuccess={handleTrainerSuccess}>
+                            <lightning-messages></lightning-messages>
+                            <div class="slds-grid slds-wrap slds-gutters">
+                                <div class="slds-col slds-size_1-of-1">
+                                    <lightning-input-field field-name="Name" required></lightning-input-field>
+                                </div>
+                                <div class="slds-col slds-size_1-of-1">
+                                    <lightning-input-field field-name="Specialization__c"></lightning-input-field>
+                                </div>
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                    <lightning-input-field field-name="Email__c"></lightning-input-field>
+                                </div>
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                    <lightning-input-field field-name="Phone__c"></lightning-input-field>
+                                </div>
+                                <div class="slds-col slds-size_1-of-1 slds-medium-size_1-of-2">
+                                    <lightning-input-field field-name="Avaiable__c"></lightning-input-field>
+                                </div>
+                                <div class="slds-col slds-size_1-of-1">
+                                    <lightning-input-field field-name="Bio__c"></lightning-input-field>
+                                </div>
+                            </div>
+                            <div class="ef-actions slds-m-top_medium">
+                                <button class="ef-btn ef-btn--secondary" onclick={closeTrainerModal}>Anuluj</button>
+                                <lightning-button variant="brand" type="submit" label="Zapisz trenera"></lightning-button>
+                            </div>
+                        </lightning-record-edit-form>
+                    </div>
+                </div>
+            </div>
+        </template>
+
+    </div>
+</template>

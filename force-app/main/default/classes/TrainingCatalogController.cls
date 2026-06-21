@@ -13,7 +13,7 @@ public without sharing class TrainingCatalogController {
                        'Format__c, Location__c, Price__c, Prerequisite_Info__c, ' +
                        'Max_Participants__c, Enrolled_Count__c, Free_Spots__c, ' +
                        'Trainer__r.Name, Trainer__r.Specialization__c, Trainer__r.Bio__c ' +
-                       'FROM Training__c WHERE Status__c = \'Active\'';
+                       'FROM Training__c WHERE Status__c IN (\'Planed\', \'Active\')';
 
         if (String.isNotBlank(searchTerm)) {
             query += ' AND Name LIKE \'%' + String.escapeSingleQuotes(searchTerm) + '%\'';
@@ -45,5 +45,19 @@ public without sharing class TrainingCatalogController {
         result.enrollmentStatusByTraining = statusByTraining;
         result.enrollmentIdByTraining = idByTraining;
         return result;
+    }
+
+    // Sprawdza, czy zalogowany uzytkownik ma profil System Administrator -
+    // uzywane do automatycznego przekierowania admina ze strony glownej na panel admina,
+    // zamiast skomplikowanej konfiguracji Page Variations/Audience w Experience Builderze.
+    @AuraEnabled(cacheable=true)
+    public static Boolean isCurrentUserAdmin() {
+        List<User> currentUser = [
+            SELECT Profile.Name
+            FROM User
+            WHERE Id = :UserInfo.getUserId()
+            LIMIT 1
+        ];
+        return !currentUser.isEmpty() && currentUser[0].Profile.Name == 'System Administrator';
     }
 }

@@ -1,78 +1,31 @@
 public class TrainingHandler {
 
-    public static void validateRoomConflicts(
-        List<Training__c> newList,
-        Map<Id, Training__c> oldMap
-    ){
-
-        Set<Id> roomIds = new Set<Id>();
-
-        for(Training__c t : newList){
-
-            if(
-                t.Room__c != null &&
-                t.Status__c != 'Anulowane'
-            ){
-                roomIds.add(t.Room__c);
-            }
-        }
-
-        if(roomIds.isEmpty()){
-            return;
-        }
-
-        List<Training__c> existingTrainings = [
-
-            SELECT Id,
-                   Room__c,
-                   Start_Date__c,
-                   End_Date__c,
-                   Status__c
-
-            FROM Training__c
-
-            WHERE Room__c IN :roomIds
-            AND Status__c != 'Anulowane'
-        ];
-
-        for(Training__c newTraining : newList){
-
-            if(newTraining.Room__c == null){
-                continue;
-            }
-
-            for(Training__c existing : existingTrainings){
-
-                if(existing.Id == newTraining.Id){
-                    continue;
-                }
-
-                Boolean overlap =
-
-                    newTraining.Start_Date__c
-                    < existing.End_Date__c
-
-                    &&
-
-                    existing.Start_Date__c
-                    < newTraining.End_Date__c;
-
-                if(
-
-                    overlap
-
-                    &&
-
-                    existing.Room__c
-                    == newTraining.Room__c
-
-                ){
-
-                    newTraining.addError(
-                        'Room already occupied in selected time range'
-                    );
-                }
+    // Nie pozwalamy zakładać NOWYCH szkoleń, których termin rozpoczęcia jest już w przeszłości.
+    // Dotyczy tylko tworzenia (insert) - nie blokujemy edycji już istniejących/zakończonych rekordów.
+    public static void validateNotInPast(List<Training__c> newList) {
+        Datetime now = Datetime.now();
+        for (Training__c t : newList) {
+            if (t.Start_Date__c != null && t.Start_Date__c < now) {
+                t.addError('Nie można utworzyć szkolenia, którego data rozpoczęcia jest w przeszłości.');
             }
         }
     }
+
+    // Wymusza poprawny Status__c (Planed/Active/Ended) na podstawie RZECZYWISTYCH dat,
+    // niezależnie od tego, co zostało wybrane w formularzu.
+    public static void enforceComputedStatus(List<Training__c> newList) {
+        Datetime now = Datetime.now();
+        for (Training__c t : newList) {
+            String computed = TrainingStatusUpdater.computeStatus(t.Start_Date__c, t.End_Date__c, now);
+            if (computed != null) {
+                t.Status__c = computed;
+            }
+        }
+    }
+
+    // UWAGA: Konflikt sali NIE jest już sprawdzany tutaj. Training__c.Start_Date__c/End_Date__c
+    // reprezentują teraz zakres CAŁEGO kursu (np. 4 tygodnie cotygodniowych spotkań), a nie
+    // pojedynczy termin - sprawdzanie konfliktu po tych datach dawałoby fałszywe alarmy.
+    // Faktyczny konflikt sali sprawdza TrainingSessionHandler, bo to pojedyncze sesje
+    // (Training_Session__c) mają realne godziny zajęcia pomieszczenia.
 }

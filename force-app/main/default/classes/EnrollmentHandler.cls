@@ -45,8 +45,8 @@ public class EnrollmentHandler {
         for (Enrollment__c e : newList) {
             Training__c t = trainings.get(e.Training__c);
 
-            if (t.Status__c != 'Active') {
-                e.addError('Enrollment is only possible for trainings with Active status.');
+            if (t.Status__c != 'Active' && t.Status__c != 'Planed') {
+                e.addError('Enrollment is only possible for trainings that have not ended yet.');
                 continue;
             }
 

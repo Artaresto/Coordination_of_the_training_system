@@ -1,0 +1,90 @@
+<template>
+    <div class="cal-wrap">
+
+        <div class="cal-header">
+            <h1 class="cal-title">Moje szkolenia</h1>
+            <div class="cal-nav">
+                <button class="cal-nav-btn" onclick={handlePrev} title="Poprzedni miesiąc">‹</button>
+                <span class="cal-month">{monthLabel}</span>
+                <button class="cal-nav-btn" onclick={handleNext} title="Następny miesiąc">›</button>
+                <button class="cal-today-btn" onclick={handleToday}>Dziś</button>
+            </div>
+        </div>
+
+        <div class="cal-grid">
+            <template for:each={weekdays} for:item="wd">
+                <div key={wd} class="cal-weekday">{wd}</div>
+            </template>
+
+            <template for:each={weeks} for:item="week">
+                <template for:each={week.days} for:item="day">
+                    <template if:true={day.empty}>
+                        <div key={day.key} class="cal-cell cal-cell--empty"></div>
+                    </template>
+                    <template if:false={day.empty}>
+                        <div key={day.key} class={day.cellClass}>
+                            <span class="cal-daynum">{day.day}</span>
+                            <div class="cal-chips">
+                                <template for:each={day.trainings} for:item="t">
+                                    <button key={t.id} class={t.chipClass}
+                                            data-tid={t.id} onclick={handleSelect}
+                                            title={t.name}>
+                                        {t.name}
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </template>
+            </template>
+        </div>
+
+        <template if:true={hasNoTrainings}>
+            <p class="cal-empty">Nie masz jeszcze żadnych zaplanowanych szkoleń.</p>
+        </template>
+
+        <template if:true={showDetails}>
+            <div class="cal-overlay" onclick={handleOverlayClick}>
+                <div class="cal-modal">
+                    <div class="cal-modal-header">
+                        <h2 class="cal-modal-title">{selected.name}</h2>
+                        <button class="cal-modal-close" onclick={handleCloseDetails}>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="cal-modal-body">
+                        <span class="cal-badge">{selected.format}</span>
+
+                        <div class="cal-modal-row">
+                            <span class="cal-modal-label">Start</span>
+                            <lightning-formatted-date-time value={selected.startDate}
+                                year="numeric" month="short" day="numeric"
+                                hour="2-digit" minute="2-digit"></lightning-formatted-date-time>
+                        </div>
+                        <div class="cal-modal-row">
+                            <span class="cal-modal-label">Koniec</span>
+                            <lightning-formatted-date-time value={selected.endDate}
+                                year="numeric" month="short" day="numeric"
+                                hour="2-digit" minute="2-digit"></lightning-formatted-date-time>
+                        </div>
+                        <div class="cal-modal-row">
+                            <span class="cal-modal-label">Status</span>
+                            <span>{selected.status}</span>
+                        </div>
+                        <div class="cal-modal-row">
+                            <span class="cal-modal-label">Zapisani</span>
+                            <span>{selected.enrolledCount} / {selected.maxParticipants}</span>
+                        </div>
+
+                        <div class="cal-modal-actions">
+                            <button class="cal-btn cal-btn--secondary" onclick={handleCloseDetails}>Zamknij</button>
+                            <button class="cal-btn cal-btn--primary" onclick={handleGoToTraining}>Przejdź do szkolenia</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
+    </div>
+</template>
