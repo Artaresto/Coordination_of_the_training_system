@@ -136,16 +136,27 @@
 }
 .ef-modal {
     background: #fff; border-radius: 16px; width: 100%; max-width: 600px;
-    margin: 1rem; overflow: hidden;
+    margin: 1rem;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 .ef-modal-header {
     display: flex; align-items: center; justify-content: space-between;
     padding: 20px 24px; border-bottom: 1px solid #e5e7eb; background: #043669;
+    flex-shrink: 0;
 }
 .ef-title { font-size: 16px; font-weight: 600; color: #fff; margin: 0; }
 .ef-close { background: none; border: none; color: #fff; cursor: pointer; padding: 4px; opacity: 0.8; }
 .ef-close:hover { opacity: 1; }
-.ef-modal-body { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+.ef-modal-body {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+}
 
 /* Dostosowanie datatable na białym tle */
 .table-container { border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
