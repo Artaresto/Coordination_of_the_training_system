@@ -195,7 +195,48 @@
                                 </div>
                             </div>
                         </lightning-tab>
-
+                        <lightning-tab label="Oceny">
+                            <div class="slds-p-around_medium">
+                                <template if:true={reviewGroups.length}>
+                                    <template for:each={reviewGroups} for:item="group">
+                                        <div key={group.id} class="review-group">
+                                            <div class="review-group-header">
+                                                <strong>{group.name}</strong>
+                                                <span class="review-count">{group.count} ocen</span>
+                                            </div>
+                                            <div class="review-averages">
+                                                <span>Szkolenie:
+                                                    <span class="review-stars">{group.avgTrainingStars}</span>
+                                                    <span class="review-avg-num">{group.avgTraining}</span>
+                                                </span>
+                                                <span>Trener:
+                                                    <span class="review-stars">{group.avgTrainerStars}</span>
+                                                    <span class="review-avg-num">{group.avgTrainer}</span>
+                                                </span>
+                                            </div>
+                                            <template for:each={group.items} for:item="rev">
+                                                <div key={rev.id} class="review-item">
+                                                    <div class="review-item-top">
+                                                        <span class="review-participant">{rev.participant}</span>
+                                                        <span class="review-item-stars">
+                                                            Szkolenie <span class="review-stars">{rev.trainingStars}</span>
+                                                            &nbsp;·&nbsp;
+                                                            Trener <span class="review-stars">{rev.trainerStars}</span>
+                                                        </span>
+                                                    </div>
+                                                    <template if:true={rev.hasComment}>
+                                                        <p class="review-comment">{rev.comment}</p>
+                                                    </template>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </template>
+                                <template if:false={reviewGroups.length}>
+                                    <p class="empty-msg">Brak ocen. Pojawią się tutaj, gdy uczestnicy ocenią ukończone szkolenia.</p>
+                                </template>
+                            </div>
+                        </lightning-tab>
                     </lightning-tabset>
                 </div>
             </div>
