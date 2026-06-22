@@ -195,4 +195,15 @@ public with sharing class CoordinatorDashboardController {
         }
         return result;
     }
+
+    @AuraEnabled(cacheable=true)
+    public static List<Enrollment__c> getReviews() {
+        return [SELECT Id, Participant__r.Name, Training__c, Training__r.Name,
+                       Training_Rating__c, Trainer_Rating__c, Review_Comment__c, Reviewed_Date__c
+                FROM Enrollment__c
+                WHERE Training__r.OwnerId = :UserInfo.getUserId()
+                AND Reviewed_Date__c != null
+                WITH SECURITY_ENFORCED
+                ORDER BY Reviewed_Date__c DESC];
+    }
 }

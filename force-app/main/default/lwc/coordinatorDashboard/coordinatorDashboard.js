@@ -14,6 +14,7 @@ import getTrainingFormats from '@salesforce/apex/CoordinatorDashboardController.
 import getTrainingsEndingSoon from '@salesforce/apex/CoordinatorDashboardController.getTrainingsEndingSoon';
 import getCancelledEnrollments from '@salesforce/apex/CoordinatorDashboardController.getCancelledEnrollments';
 import unlockEnrollment from '@salesforce/apex/CoordinatorDashboardController.unlockEnrollment';
+import getReviews from '@salesforce/apex/CoordinatorDashboardController.getReviews';
 
 const ENROLLMENT_ACTIONS = [
     { label: 'Zatwierdź', name: 'accept', iconName: 'utility:check' },
@@ -29,6 +30,8 @@ export default class CoordinatorDashboard extends NavigationMixin(LightningEleme
 
     @track pendingEnrollments = [];
     @track certificatesCount = 0;
+
+    @track reviewGroups = [];
 
     @track isCertPreviewOpen = false;
     @track certPreviewUrl = '';
@@ -160,6 +163,12 @@ export default class CoordinatorDashboard extends NavigationMixin(LightningEleme
         this.participantsActiveTab = 'cancelled';
     }
 
+    // NOWE: zamiana liczby na gwiazdki (np. 4 -> ★★★★☆)
+    toStars(value) {
+        const v = Math.round(value || 0);
+        return '★'.repeat(v) + '☆'.repeat(5 - v);
+    }
+
     // getMyTrainings NIE jest cacheable (wykonuje DML, żeby przeliczyć status na podstawie dat),
     // więc nie może być użyte przez @wire (wire wymaga cacheable=true) - wywołujemy ją imperatywnie.
     loadTrainings() {
@@ -208,6 +217,50 @@ export default class CoordinatorDashboard extends NavigationMixin(LightningEleme
         this.wiredEnrollmentsResult = result;
         if (result.data) {
             this.pendingEnrollments = result.data;
+        }
+    }
+
+    // NOWE: oceny pogrupowane po szkoleniu + średnie
+    @wire(getReviews)
+    wiredReviews({ data }) {
+        if (data) {
+            const groups = {};
+            data.forEach(r => {
+                const tid = r.Training__c;
+                if (!groups[tid]) {
+                    groups[tid] = {
+                        id: tid,
+                        name: r.Training__r ? r.Training__r.Name : 'Szkolenie',
+                        items: [],
+                        sumTraining: 0,
+                        sumTrainer: 0,
+                        count: 0
+                    };
+                }
+                const g = groups[tid];
+                g.items.push({
+                    id: r.Id,
+                    participant: r.Participant__r ? r.Participant__r.Name : 'Uczestnik',
+                    trainingStars: this.toStars(r.Training_Rating__c),
+                    trainerStars: this.toStars(r.Trainer_Rating__c),
+                    comment: r.Review_Comment__c,
+                    hasComment: !!r.Review_Comment__c
+                });
+                g.sumTraining += r.Training_Rating__c || 0;
+                g.sumTrainer += r.Trainer_Rating__c || 0;
+                g.count += 1;
+            });
+
+            this.reviewGroups = Object.values(groups).map(g => ({
+                id: g.id,
+                name: g.name,
+                count: g.count,
+                avgTraining: (g.sumTraining / g.count).toFixed(1),
+                avgTrainer: (g.sumTrainer / g.count).toFixed(1),
+                avgTrainingStars: this.toStars(g.sumTraining / g.count),
+                avgTrainerStars: this.toStars(g.sumTrainer / g.count),
+                items: g.items
+            }));
         }
     }
 
